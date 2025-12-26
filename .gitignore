@@ -1,1 +1,15 @@
+# Python venv
 venv/
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+
+# Env / secrets
+.env
+.env.*
+
+# IDE
+.vscode/
+.idea/
