@@ -166,27 +166,31 @@ class KanbanBoard(QScrollArea):
         for i in reversed(range(self.h_layout.count())): 
             self.h_layout.itemAt(i).widget().setParent(None)
             
-        columns = self.db.query(KanbanColumn).order_by(KanbanColumn.order_index).all()
+        # Get "En attente" column ID for filtering
+        en_attente_col = self.db.query(KanbanColumn).filter(KanbanColumn.name == "En attente").first()
+        en_attente_id = en_attente_col.id if en_attente_col else -1
         
+        columns = self.db.query(KanbanColumn).order_by(KanbanColumn.order_index).all()
+
         for col in columns:
             col_widget = KanbanColumnWidget(col, self)
             
             # Virtual Columns Logic
             if col.name == "Traitements":
-                # Activities with pending treatments (EXCLUDING those in Validated Scelles)
+                # Activities with pending treatments (EXCLUDING those in Validated Scelles OR in En attente)
                 query = self.db.query(Activity).join(Activity.scelles).join(Scelle.traitements).filter(
                     Traitement.done == False,
                     Scelle.cta_validated == False,
                     Scelle.reparations_validated == False
-                ).distinct()
+                ).filter(Activity.column_id != en_attente_id).distinct()
             
             elif col.name == "Tâches":
-                # Activities with pending tasks (EXCLUDING those in Validated Scelles)
+                # Activities with pending tasks (EXCLUDING those in Validated Scelles OR in En attente)
                 query = self.db.query(Activity).join(Activity.scelles).join(Scelle.taches).filter(
                     Tache.done == False,
                     Scelle.cta_validated == False,
                     Scelle.reparations_validated == False
-                ).distinct()
+                ).filter(Activity.column_id != en_attente_id).distinct()
             
             elif col.name and col.name.upper() == "CTA":
                  # Activities with CTA Validated
@@ -202,14 +206,37 @@ class KanbanBoard(QScrollArea):
 
             elif col.name and col.name.upper() == "EN COURS":
                 # User request: "En cours" should also show pending treatments/tasks FROM OTHER COLUMNS.
-                # BUT ignore if Scelle is validated (CTA or Rep)
+                # BUT ignore if Scelle is validated (CTA or Rep) AND ignore if in En attente
+                query = self.db.query(Activity).outerjoin(Activity.scelles).outerjoin(Scelle.traitements).outerjoin(Scelle.taches).filter(
+                    or_(
+                        Activity.column_id == col.id,
+                        and_(Traitement.done == False, Scelle.cta_validated == False, Scelle.reparations_validated == False)
+                    )
+                ).filter(
+                     or_(
+                        Activity.column_id == col.id, # Always include if physically here
+                        Activity.column_id != en_attente_id # Otherwise must NOT be in En attente
+                     )
+                ).distinct()
+                # Correction: The logic above for "En cours" is slightly complex with ORs.
+                # Simplest way:
+                # 1. Base Criteria for "pending stuff" OR "is here"
+                # 2. Filter: If it is NOT here, it MUST NOT be in En attente.
+                # Equivalently: .filter(or_(Activity.column_id == col.id, Activity.column_id != en_attente_id))
+                # Wait, if col.id != en_attente_id (which is true), then `Activity.column_id == col.id` implies `Activity.column_id != en_attente_id`.
+                # So `Activity.column_id != en_attente_id` covers both cases!
+                # If it's in En cours, it's not in En attente.
+                # If it's in another column (e.g. To Do), it's not in En attente.
+                # If it IS in En attente, we exclude it.
+                # So just .filter(Activity.column_id != en_attente_id) works perfectly.
+                
                 query = self.db.query(Activity).outerjoin(Activity.scelles).outerjoin(Scelle.traitements).outerjoin(Scelle.taches).filter(
                     or_(
                         Activity.column_id == col.id,
                         and_(Traitement.done == False, Scelle.cta_validated == False, Scelle.reparations_validated == False),
                         and_(Tache.done == False, Scelle.cta_validated == False, Scelle.reparations_validated == False)
                     )
-                ).distinct()
+                ).filter(Activity.column_id != en_attente_id).distinct()
 
             else:
                 # Standard Column
