@@ -78,10 +78,14 @@ def board(request):
             
         elif col.name == "En cours":
             # En cours behaves as an aggregator:
-            # 1. Activities physically in "En cours"
+            # 1. Activities physically in "En cours" (BUT exclude those with CTA/Rep validated, as they move to En Attente/CTA)
             # 2. Activities with pending treatments or tasks (regardless of column, unless Terminé/Archivé)
             activities = Activity.objects.filter(
-                Q(column=col) |
+                (
+                    Q(column=col) & 
+                    ~Q(scelles__cta_validated=True) & 
+                    ~Q(scelles__reparations_validated=True)
+                ) |
                 (
                     (Q(scelles__traitements__done=False) | Q(scelles__taches__done=False)) &
                     Q(scelles__cta_validated=False) &
