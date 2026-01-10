@@ -27,6 +27,6 @@
         </button>
     </div>
     <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
-        <input type="checkbox" class="done-checkbox" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %}>
+        <input type="checkbox" class="done-checkbox" autocomplete="off" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %}>
     </div>
 </div>
