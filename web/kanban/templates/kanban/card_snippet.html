@@ -22,11 +22,14 @@
         {% endwith %}
     </div>
     <div class="card-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
+        {% if user.is_superuser %}
         <button class="delete-activity-btn" onclick="deleteActivity(event, {{ activity.id }})">
             <i class="fa-solid fa-trash"></i>
         </button>
+        {% endif %}
     </div>
     <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
-        <input type="checkbox" class="done-checkbox" autocomplete="off" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %}>
+        <input type="checkbox" class="done-checkbox" autocomplete="off"
+            onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
     </div>
 </div>

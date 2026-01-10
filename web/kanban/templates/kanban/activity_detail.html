@@ -21,13 +21,14 @@
 <div class="modal-body">
     <!-- Tags Management -->
     <div class="modal-section">
-        <h3>Tags <button class="btn-icon-sm" onclick="toggleTagSelector()" title="Gérer les tags"><i
-                    class="fa-solid fa-plus"></i></button></h3>
+        <h3>Tags {% if user.is_superuser %}<button class="btn-icon-sm" onclick="toggleTagSelector()"
+                title="Gérer les tags"><i class="fa-solid fa-plus"></i></button>{% endif %}</h3>
         <div class="tags" id="activityTags">
             {% for tag in activity.tags.all %}
             <span class="tag" style="background-color: {{ tag.color }};">
                 {{ tag.name }}
-                <span class="remove-tag" onclick="toggleTag({{ tag.id }})" title="Retirer">&times;</span>
+                {% if user.is_superuser %}<span class="remove-tag" onclick="toggleTag({{ tag.id }})"
+                    title="Retirer">&times;</span>{% endif %}
             </span>
             {% endfor %}
         </div>
@@ -56,46 +57,47 @@
     <div class="modal-section description">
         <h3>Description</h3>
         <textarea id="activityDescription" class="edit-input area-input" rows="4"
-            onblur="saveActivityField('description', this.value)">{{ activity.description }}</textarea>
+            onblur="saveActivityField('description', this.value)" {% if not user.is_superuser %}disabled{% endif %}>{{ activity.description }}</textarea>
     </div>
 
     <!-- Scellés Management -->
     <div class="modal-section">
         <h3>
             <i class="fa-solid fa-box"></i> Scellés
-            <button class="btn-icon-sm" onclick="addScelle()" title="Ajouter un scellé"><i
-                    class="fa-solid fa-plus"></i></button>
+            {% if user.is_superuser %}<button class="btn-icon-sm" onclick="addScelle()" title="Ajouter un scellé"><i
+                    class="fa-solid fa-plus"></i></button>{% endif %}
         </h3>
         <div class="scelles-list" id="scellesList">
             {% for scelle in activity.scelles.all %}
             <div class="scelle-item" id="scelle-{{ scelle.id }}">
                 <div class="scelle-header-edit">
                     <input type="text" value="{{ scelle.name }}" class="edit-input scelle-name"
-                        onblur="updateScelle({{ scelle.id }}, 'name', this.value)">
-                    <button class="btn-icon-danger" onclick="deleteScelle({{ scelle.id }})"><i
-                            class="fa-solid fa-trash"></i></button>
+                        onblur="updateScelle({{ scelle.id }}, 'name', this.value)" {% if not user.is_superuser %}disabled{% endif %}>
+                    {% if user.is_superuser %}<button class="btn-icon-danger" onclick="deleteScelle({{ scelle.id }})"><i
+                            class="fa-solid fa-trash"></i></button>{% endif %}
                 </div>
 
                 <div class="scelle-properties">
                     <label class="checkbox-label">
                         <input type="checkbox" {% if scelle.cta_validated %}checked{% endif %}
-                            onchange="updateScelle({{ scelle.id }}, 'cta_validated', this.checked)"> CTA
+                            onchange="updateScelle({{ scelle.id }}, 'cta_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> CTA
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" {% if scelle.reparations_validated %}checked{% endif %}
-                            onchange="updateScelle({{ scelle.id }}, 'reparations_validated', this.checked)"> Rép.
+                            onchange="updateScelle({{ scelle.id }}, 'reparations_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> Rép.
                     </label>
                 </div>
 
                 <input type="text" value="{{ scelle.info }}" placeholder="Infos supplémentaires..."
-                    class="edit-input scelle-info" onblur="updateScelle({{ scelle.id }}, 'info', this.value)">
+                    class="edit-input scelle-info" onblur="updateScelle({{ scelle.id }}, 'info', this.value)" {% if not user.is_superuser %}disabled{% endif %}>
 
                 <!-- Traitements -->
                 <div class="sub-section">
                     <h5>
                         Traitements
-                        <button class="btn-icon-sm" onclick="showAddInput('traitement', {{ scelle.id }})"
-                            title="Ajouter un traitement"><i class="fa-solid fa-plus"></i></button>
+                        {% if user.is_superuser %}<button class="btn-icon-sm"
+                            onclick="showAddInput('traitement', {{ scelle.id }})" title="Ajouter un traitement"><i
+                                class="fa-solid fa-plus"></i></button>{% endif %}
                     </h5>
 
                     <div id="add-traitement-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
@@ -109,12 +111,12 @@
                     <ul class="task-list" id="traitements-list-{{ scelle.id }}">
                         {% for t in scelle.traitements.all %}
                         <li id="traitement-{{ t.id }}" class="{% if t.done %}done{% endif %}">
-                            <i onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;"
+                            <i {% if user.is_superuser %}onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;" {% endif %}
                                 class="fa-{% if t.done %}solid fa-check-square{% else %}regular fa-square{% endif %}"></i>
                             <span style="flex: 1;">{{ t.description }}</span>
                             {% if t.done_at %}<span class="done-date">({{ t.done_at|date:"d/m" }})</span>{% endif %}
-                            <button class="btn-icon-danger-sm" onclick="deleteTraitement({{ t.id }})"><i
-                                    class="fa-solid fa-trash"></i></button>
+                            {% if user.is_superuser %}<button class="btn-icon-danger-sm"
+                                onclick="deleteTraitement({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -124,8 +126,9 @@
                 <div class="sub-section">
                     <h5>
                         Tâches
-                        <button class="btn-icon-sm" onclick="showAddInput('tache', {{ scelle.id }})"
-                            title="Ajouter une tâche"><i class="fa-solid fa-plus"></i></button>
+                        {% if user.is_superuser %}<button class="btn-icon-sm"
+                            onclick="showAddInput('tache', {{ scelle.id }})" title="Ajouter une tâche"><i
+                                class="fa-solid fa-plus"></i></button>{% endif %}
                     </h5>
 
                     <div id="add-tache-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
@@ -139,11 +142,11 @@
                     <ul class="task-list" id="taches-list-{{ scelle.id }}">
                         {% for t in scelle.taches.all %}
                         <li id="tache-{{ t.id }}" class="{% if t.done %}done{% endif %}">
-                            <i onclick="toggleTache({{ t.id }})" style="cursor: pointer;"
+                            <i {% if user.is_superuser %}onclick="toggleTache({{ t.id }})" style="cursor: pointer;" {% endif %}
                                 class="fa-{% if t.done %}solid fa-check-circle{% else %}regular fa-circle{% endif %}"></i>
                             <span style="flex: 1;">{{ t.description }}</span>
-                            <button class="btn-icon-danger-sm" onclick="deleteTache({{ t.id }})"><i
-                                    class="fa-solid fa-trash"></i></button>
+                            {% if user.is_superuser %}<button class="btn-icon-danger-sm"
+                                onclick="deleteTache({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>

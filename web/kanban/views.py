@@ -7,6 +7,7 @@ from django.views.decorators.http import require_POST
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django.contrib.auth.decorators import user_passes_test
 
 def board(request):
     columns = KanbanColumn.objects.exclude(name='Archivé').order_by('order_index')
@@ -91,6 +92,7 @@ def board(request):
 # ... (API endpoints remain unchanged until get_activity_columns) ...
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def update_column_order(request):
     try:
         data = json.loads(request.body)
@@ -105,6 +107,7 @@ def update_column_order(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def move_activity(request):
     try:
         data = json.loads(request.body)
@@ -147,6 +150,7 @@ def get_activity_details(request, activity_id):
         return JsonResponse({'error': 'Activity not found'}, status=404)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def create_tag(request):
     try:
         data = json.loads(request.body)
@@ -162,6 +166,7 @@ def create_tag(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def update_activity(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -189,6 +194,7 @@ def update_activity(request, activity_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def toggle_activity_tag(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -212,6 +218,7 @@ def toggle_activity_tag(request, activity_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def delete_activity(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -234,6 +241,7 @@ def delete_activity(request, activity_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def create_activity(request):
     try:
         data = json.loads(request.body)
@@ -262,6 +270,7 @@ def create_activity(request):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def add_scelle(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -277,6 +286,7 @@ def add_scelle(request, activity_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def update_scelle(request, scelle_id):
     try:
         from .models import Scelle
@@ -298,6 +308,7 @@ def update_scelle(request, scelle_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def delete_scelle(request, scelle_id):
     try:
         from .models import Scelle
@@ -309,6 +320,7 @@ def delete_scelle(request, scelle_id):
 # Traitements & Tâches APIs
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def add_traitement(request, scelle_id):
     try:
         from .models import Scelle, Traitement
@@ -324,6 +336,7 @@ def add_traitement(request, scelle_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def toggle_traitement(request, traitement_id):
     try:
         from .models import Traitement
@@ -340,6 +353,7 @@ def toggle_traitement(request, traitement_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def delete_traitement(request, traitement_id):
     try:
         from .models import Traitement
@@ -349,6 +363,7 @@ def delete_traitement(request, traitement_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def add_tache(request, scelle_id):
     try:
         from .models import Scelle, Tache
@@ -364,6 +379,7 @@ def add_tache(request, scelle_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def toggle_tache(request, tache_id):
     try:
         from .models import Tache
@@ -375,6 +391,7 @@ def toggle_tache(request, tache_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def delete_tache(request, tache_id):
     try:
         from .models import Tache
@@ -383,6 +400,7 @@ def delete_tache(request, tache_id):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
+@require_POST
 @require_POST
 def get_activity_columns(request, activity_id):
     try:
@@ -496,6 +514,7 @@ def archives(request):
     return render(request, 'kanban/archives.html', context)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def archive_activity(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)
@@ -507,6 +526,7 @@ def archive_activity(request, activity_id):
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
 @require_POST
+@user_passes_test(lambda u: u.is_superuser)
 def unarchive_activity(request, activity_id):
     try:
         activity = Activity.objects.get(id=activity_id)

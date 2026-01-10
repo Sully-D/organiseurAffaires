@@ -29,9 +29,11 @@
                             </div>
                         </div>
                     </div>
+                    {% if user.is_superuser %}
                     <button class="add-activity-btn" onclick="createActivity({{ col_data.column.id }})">
                         <i class="fa-solid fa-plus"></i>
                     </button>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -360,101 +362,102 @@
         // Column Sorting
         var board = document.querySelector('.board-container');
         Sortable.create(board, {
+            disabled: {% if not user.is_superuser %}true{% else %}false{% endif %},
+        animation: 150,
+        handle: '.column-header', // Only drag by header
+        ghostClass: 'sortable-ghost',
+        onEnd: function (evt) {
+            var order = this.toArray();
+            fetch('{% url "kanban:update_column_order" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrftoken
+                },
+                body: JSON.stringify({ order: order })
+            });
+        }
+        });
+
+    // Activity sorting within and between columns
+    var columns = document.querySelectorAll('.column-body');
+    columns.forEach(function (col) {
+        Sortable.create(col, {
+            group: 'shared', // Allow dragging between lists
             animation: 150,
-            handle: '.column-header', // Only drag by header
             ghostClass: 'sortable-ghost',
             onEnd: function (evt) {
-                var order = this.toArray();
-                fetch('{% url "kanban:update_column_order" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': csrftoken
-                    },
-                    body: JSON.stringify({ order: order })
-                });
+                var itemEl = evt.item;  // dragged HTMLElement
+                var newColumnId = itemEl.closest('.kanban-column').getAttribute('data-id');
+                var activityId = itemEl.getAttribute('data-id');
+
+                // If dropped in the same list, we might implement reordering later
+                // If dropped in another list, update the column
+
+                if (evt.to !== evt.from) {
+                    // Check if moved to "Terminé"
+                    const toColumn = evt.to.closest('.kanban-column');
+                    const h2 = toColumn.querySelector('h2');
+                    const isDone = h2 && h2.innerText.trim() === 'Terminé';
+
+                    const card = itemEl;
+                    const checkbox = card.querySelector('.done-checkbox');
+
+                    // Force update with a small delay to ensure DOM is ready
+                    setTimeout(() => {
+                        if (checkbox) {
+                            checkbox.checked = isDone;
+                            if (!isDone) {
+                                checkbox.removeAttribute('checked');
+                            } else {
+                                checkbox.setAttribute('checked', 'checked');
+                            }
+                        }
+                    }, 10);
+
+                    fetch('{% url "kanban:move_activity" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
+                        body: JSON.stringify({
+                            activity_id: activityId,
+                            column_id: newColumnId
+                        })
+                    })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                // Cleanup duplicates
+                                cleanupDuplicates(activityId, itemEl);
+
+                                // Refresh all columns to ensure virtual state is correct
+                                refreshActivityColumns(activityId);
+                            } else {
+                                console.error('Error moving activity');
+                                // Revert move if failed?
+                            }
+                        });
+                }
             }
         });
+    });
 
-        // Activity sorting within and between columns
-        var columns = document.querySelectorAll('.column-body');
-        columns.forEach(function (col) {
-            Sortable.create(col, {
-                group: 'shared', // Allow dragging between lists
-                animation: 150,
-                ghostClass: 'sortable-ghost',
-                onEnd: function (evt) {
-                    var itemEl = evt.item;  // dragged HTMLElement
-                    var newColumnId = itemEl.closest('.kanban-column').getAttribute('data-id');
-                    var activityId = itemEl.getAttribute('data-id');
+    // Global Activity Click Handler (Delegation)
+    document.querySelector('.board-container').addEventListener('click', function (e) {
+        const card = e.target.closest('.activity-card');
+        if (!card) return;
 
-                    // If dropped in the same list, we might implement reordering later
-                    // If dropped in another list, update the column
+        // Prevent if clicking delete button or drag handles (if any specific logic needed)
+        if (e.target.closest('.delete-activity-btn')) return;
 
-                    if (evt.to !== evt.from) {
-                        // Check if moved to "Terminé"
-                        const toColumn = evt.to.closest('.kanban-column');
-                        const h2 = toColumn.querySelector('h2');
-                        const isDone = h2 && h2.innerText.trim() === 'Terminé';
+        const activityId = card.getAttribute('data-id');
+        openModal();
 
-                        const card = itemEl;
-                        const checkbox = card.querySelector('.done-checkbox');
-
-                        // Force update with a small delay to ensure DOM is ready
-                        setTimeout(() => {
-                            if (checkbox) {
-                                checkbox.checked = isDone;
-                                if (!isDone) {
-                                    checkbox.removeAttribute('checked');
-                                } else {
-                                    checkbox.setAttribute('checked', 'checked');
-                                }
-                            }
-                        }, 10);
-
-                        fetch('{% url "kanban:move_activity" %}', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRFToken': csrftoken
-                            },
-                            body: JSON.stringify({
-                                activity_id: activityId,
-                                column_id: newColumnId
-                            })
-                        })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    // Cleanup duplicates
-                                    cleanupDuplicates(activityId, itemEl);
-
-                                    // Refresh all columns to ensure virtual state is correct
-                                    refreshActivityColumns(activityId);
-                                } else {
-                                    console.error('Error moving activity');
-                                    // Revert move if failed?
-                                }
-                            });
-                    }
-                }
-            });
-        });
-
-        // Global Activity Click Handler (Delegation)
-        document.querySelector('.board-container').addEventListener('click', function (e) {
-            const card = e.target.closest('.activity-card');
-            if (!card) return;
-
-            // Prevent if clicking delete button or drag handles (if any specific logic needed)
-            if (e.target.closest('.delete-activity-btn')) return;
-
-            const activityId = card.getAttribute('data-id');
-            openModal();
-
-            // Show loading
-            const modalContent = document.getElementById('modalContent');
-            modalContent.innerHTML = `
+        // Show loading
+        const modalContent = document.getElementById('modalContent');
+        modalContent.innerHTML = `
                 <div class="modal-header">
                     <h2>Chargement...</h2>
                     <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
@@ -466,22 +469,22 @@
                 </div>
             `;
 
-            // Fetch content
-            fetch(`/activity/${activityId}/`)
-                .then(response => response.text())
-                .then(html => {
-                    modalContent.innerHTML = html;
-                    // Execute scripts in the loaded content
-                    const scripts = modalContent.querySelectorAll('script');
-                    scripts.forEach(script => {
-                        const newScript = document.createElement('script');
-                        newScript.textContent = script.textContent;
-                        document.body.appendChild(newScript);
-                        document.body.removeChild(newScript);
-                    });
-                })
-                .catch(err => {
-                    modalContent.innerHTML = `
+        // Fetch content
+        fetch(`/activity/${activityId}/`)
+            .then(response => response.text())
+            .then(html => {
+                modalContent.innerHTML = html;
+                // Execute scripts in the loaded content
+                const scripts = modalContent.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    document.body.appendChild(newScript);
+                    document.body.removeChild(newScript);
+                });
+            })
+            .catch(err => {
+                modalContent.innerHTML = `
                         <div class="modal-header">
                             <h2>Erreur</h2>
                             <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
@@ -490,8 +493,8 @@
                             <p style="color: #ef4444;">Impossible de charger les détails.</p>
                         </div>
                     `;
-                });
-        });
+            });
+    });
 
     });
     window.refreshActivityColumns = refreshActivityColumns;
