@@ -20,6 +20,13 @@
         <span class="stat" title="Scellés"><i class="fa-solid fa-box"></i> {{ scelles_count }}</span>
         {% endif %}
         {% endwith %}
+
+        {% if activity.pending_traitements > 0 %}
+        <span class="stat" title="Traitements restants"><i class="fa-solid fa-clipboard-check"></i> {{ activity.pending_traitements }}</span>
+        {% endif %}
+        {% if activity.pending_taches > 0 %}
+        <span class="stat" title="Tâches restantes"><i class="fa-solid fa-list-check"></i> {{ activity.pending_taches }}</span>
+        {% endif %}
     </div>
     <div class="card-actions" style="margin-top: 1rem; display: flex; justify-content: flex-end; gap: 0.5rem;">
         {% if user.is_superuser %}
@@ -29,7 +36,6 @@
         {% endif %}
     </div>
     <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
-        <input type="checkbox" class="done-checkbox" autocomplete="off"
-            onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
+        <input type="checkbox" class="done-checkbox" autocomplete="off" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
     </div>
 </div>

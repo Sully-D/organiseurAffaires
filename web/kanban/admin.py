@@ -16,6 +16,7 @@ class ScelleInline(admin.TabularInline):
 
 @admin.register(Activity)
 class ActivityAdmin(admin.ModelAdmin):
+    change_list_template = "kanban/admin_change_list.html"
     list_display = ('name', 'date', 'column')
     list_filter = ('column', 'date', 'tags')
     search_fields = ('name', 'description')

@@ -1,6 +1,8 @@
-from django.shortcuts import render
-from .models import KanbanColumn, Activity, Tag
-from django.db.models import Q
+from django.shortcuts import render, get_object_or_404
+from .models import KanbanColumn, Activity, Tag, Traitement, Tache, Scelle
+from django.db.models import Q, F, Count
+import json
+from datetime import date, timedelta
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
@@ -25,7 +27,10 @@ def board(request):
                     Q(scelles__cta_validated=False) & 
                     Q(scelles__reparations_validated=False)
                 )
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
             
         elif col.name == "Tâches":
             activities = Activity.objects.filter(
@@ -36,19 +41,28 @@ def board(request):
                     Q(scelles__cta_validated=False) & 
                     Q(scelles__reparations_validated=False)
                 )
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
             
         elif col.name == "CTA":
             activities = Activity.objects.filter(
                 Q(column=col) | 
                 (Q(column__name="En cours") & Q(scelles__cta_validated=True))
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
             
         elif col.name == "Réparations":
             activities = Activity.objects.filter(
                 Q(column=col) | 
                 (Q(column__name="En cours") & Q(scelles__reparations_validated=True))
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
 
         elif col.name == "En attente":
             activities = Activity.objects.filter(
@@ -57,26 +71,33 @@ def board(request):
                     Q(column__name="En cours") & 
                     (Q(scelles__cta_validated=True) | Q(scelles__reparations_validated=True))
                 )
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
             
         elif col.name == "En cours":
-            # Exclude activities if they are fully handled by virtual columns?
-            # Or if they appear in any virtual column?
-            # User said "ne s'affiche que dans...", implying exclusion.
-            # We exclude if it matches ANY of the virtual criteria.
-            # Note: This means if a card has a scellé in CTA, it leaves "En cours".
-            # If it ALSO has a scellé in Traitements, it appears in Traitements.
-            # So it is visible in CTA and Traitements, but NOT En cours. This fits the requirement.
-            
-            activities = Activity.objects.filter(column=col).exclude(
-                (Q(scelles__traitements__done=False) & Q(scelles__cta_validated=False) & Q(scelles__reparations_validated=False)) |
-                (Q(scelles__taches__done=False) & Q(scelles__cta_validated=False) & Q(scelles__reparations_validated=False)) |
-                Q(scelles__cta_validated=True) | 
-                Q(scelles__reparations_validated=True)
-            ).prefetch_related('tags', 'scelles').distinct().order_by('date')
-            
+            # En cours behaves as an aggregator:
+            # 1. Activities physically in "En cours"
+            # 2. Activities with pending treatments or tasks (regardless of column, unless Terminé/Archivé)
+            activities = Activity.objects.filter(
+                Q(column=col) |
+                (
+                    (Q(scelles__traitements__done=False) | Q(scelles__taches__done=False)) &
+                    Q(scelles__cta_validated=False) &
+                    Q(scelles__reparations_validated=False) &
+                    ~Q(column__name__in=['Terminé', 'Archivé'])
+                )
+            ).prefetch_related('tags', 'scelles').distinct().annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
+        
         else:
-            activities = Activity.objects.filter(column=col).prefetch_related('tags', 'scelles').order_by('date')
+            activities = Activity.objects.filter(column=col).prefetch_related('tags', 'scelles').annotate(
+                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+            ).order_by('date')
             
         columns_data.append({
             'column': col,
@@ -538,3 +559,104 @@ def unarchive_activity(request, activity_id):
     except Exception as e:
         # Fallback if "En attente" doesn't exist? (Unlikely)
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+from django.contrib.auth.decorators import user_passes_test
+from datetime import date, timedelta, datetime
+from django.db.models import F, Q
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_export_form_view(request):
+    context = {
+        'today': date.today()
+    }
+    return render(request, 'kanban/admin_export_form.html', context)
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_export_report(request):
+    today = date.today()
+    
+    # Get dates from request, default to today if not provided
+    start_date_str = request.GET.get('start_date')
+    end_date_str = request.GET.get('end_date')
+    
+    if start_date_str and end_date_str:
+        try:
+            start_date = datetime.strptime(start_date_str, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+        except ValueError:
+            start_date = today
+            end_date = today
+    else:
+        start_date = today
+        end_date = today
+    
+    # 1. Traitements Validated in Range
+    traitements = Traitement.objects.filter(done=True, done_at__range=(start_date, end_date)).select_related('scelle', 'scelle__activity')
+    
+    # 2. Tasks Validated in Range
+    taches = Tache.objects.filter(done=True, done_at__range=(start_date, end_date)).select_related('scelle', 'scelle__activity')
+    
+    # 3. Finished Cards (Currently in 'Terminé')
+    finished_cards = Activity.objects.filter(column__name='Terminé').order_by('-date')
+    
+    # 4. Active Cards Processing
+    active_cards = Activity.objects.exclude(column__name='Terminé').prefetch_related('scelles')
+    
+    cta_cards = []
+    reparations_cards = []
+    urgent_cards = []
+    overdue_cards = []
+    
+    limit_date = today + timedelta(days=30)
+    
+    for card in active_cards:
+        # Check specific states first
+        is_cta = False
+        is_reparations = False
+        
+        # Check seals for CTA/Reparations status
+        for scelle in card.scelles.all():
+            if scelle.cta_validated:
+                is_cta = True
+            if scelle.reparations_validated:
+                is_reparations = True
+        
+        if is_cta:
+            cta_cards.append(card)
+            # If it's in CTA, we don't list it in Urgent/Overdue (per request)
+            continue
+            
+        if is_reparations:
+            reparations_cards.append(card)
+            # If it's in Reparations, we don't list it in Urgent/Overdue (per request)
+            continue
+            
+        # If not in special state, check urgency
+        if card.date:
+            if card.date < today:
+                card.days_overdue = (today - card.date).days
+                overdue_cards.append(card)
+            elif card.date <= limit_date:
+                card.days_remaining = (card.date - today).days
+                urgent_cards.append(card)
+    
+    # Sort lists
+    cta_cards.sort(key=lambda x: x.date if x.date else date.max)
+    reparations_cards.sort(key=lambda x: x.date if x.date else date.max)
+    overdue_cards.sort(key=lambda x: x.date) 
+    urgent_cards.sort(key=lambda x: x.date) 
+    
+    context = {
+        'today': today,
+        'start_date': start_date,
+        'end_date': end_date,
+        'traitements': traitements,
+        'taches': taches,
+        'finished_cards': finished_cards,
+        'cta_cards': cta_cards,
+        'reparations_cards': reparations_cards,
+        'urgent_cards': urgent_cards,
+        'overdue_cards': overdue_cards,
+    }
+    
+    return render(request, 'kanban/admin_export.html', context)

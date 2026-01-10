@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport Journalier</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            color: #333;
+        }
+
+        h1 {
+            border-bottom: 2px solid #333;
+            padding-bottom: 0.5rem;
+        }
+
+        h2 {
+            margin-top: 2rem;
+            color: #444;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 0.25rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .red {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .orange {
+            color: #f57c00;
+            font-weight: bold;
+        }
+
+        .green {
+            color: #388e3c;
+            font-weight: bold;
+        }
+
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                padding: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="no-print" style="margin-bottom: 1rem;">
+        <button onclick="window.print()" style="padding: 10px 20px; cursor: pointer;">Imprimer / PDF</button>
+        <a href="/admin/kanban/activity/" style="margin-left: 1rem;">Retour Admin</a>
+    </div>
+
+    <h1>Rapport Journalier - {{ today|date:"d/m/Y" }}</h1>
+
+    <h2>Traitements Validés Aujourd'hui</h2>
+    {% if traitements %}
+    <table>
+        <thead>
+            <tr>
+                <th>Scellé / Activité</th>
+                <th>Description</th>
+                <th>Heure (si dispo)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in traitements %}
+            <tr>
+                <td>
+                    <strong>{{ t.scelle.name }}</strong>
+                    <br><small>{{ t.scelle.activity.name }}</small>
+                </td>
+                <td>{{ t.description }}</td>
+                <td>{{ t.done_at|date:"d/m/Y" }}</td> <!-- done_at is DateField, assuming user meant today -->
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucun traitement validé ce jour.</p>
+    {% endif %}
+
+    <h2>Tâches Validées Aujourd'hui</h2>
+    {% if taches %}
+    <table>
+        <thead>
+            <tr>
+                <th>Scellé / Activité</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in taches %}
+            <tr>
+                <td>
+                    <strong>{{ t.scelle.name }}</strong>
+                    <br><small>{{ t.scelle.activity.name }}</small>
+                </td>
+                <td>{{ t.description }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune tâche validée ce jour.</p>
+    {% endif %}
+
+    <h2>Cartes Terminées (Total)</h2>
+    {% if finished_cards %}
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Date Limite</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in finished_cards %}
+            <tr>
+                <td>{{ card.name }}</td>
+                <td>{{ card.date|date:"d/m/Y" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Aucune carte terminée.</p>
+    {% endif %}
+
+    <!-- 4. CTA -->
+    <div class="header">
+        <h2>En CTA</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date Limite</th>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in cta_cards %}
+            <tr>
+                <td>{{ card.date|date:"d/m/Y" }}</td>
+                <td>{{ card.name }}</td>
+                <td>{{ card.description|truncatechars:100 }}</td>
+                <td>
+                    {% for tag in card.tags.all %}
+                    <span class="tag" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="empty">Aucune carte en CTA.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- 5. Réparations -->
+    <div class="header">
+        <h2>En Réparations</h2>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Date Limite</th>
+                <th>Nom</th>
+                <th>Description</th>
+                <th>Tags</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for card in reparations_cards %}
+            <tr>
+                <td>{{ card.date|date:"d/m/Y" }}</td>
+                <td>{{ card.name }}</td>
+                <td>{{ card.description|truncatechars:100 }}</td>
+                <td>
+                    {% for tag in card.tags.all %}
+                    <span class="tag" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" class="empty">Aucune carte en réparation.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2>Délai Court (< 30 jours)</h2>
+            {% if urgent_cards %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Date Limite</th>
+                        <th>Jours Restants</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in urgent_cards %}
+                    <tr>
+                        <td>{{ card.name }}</td>
+                        <td class="orange">{{ card.date|date:"d/m/Y" }}</td>
+                        <td>{{ card.days_remaining }} jours</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Aucune carte en urgence immédiate.</p>
+            {% endif %}
+
+            <h2>En Retard</h2>
+            {% if overdue_cards %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Date Limite</th>
+                        <th>Retard</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for card in overdue_cards %}
+                    <tr>
+                        <td>{{ card.name }}</td>
+                        <td class="red">{{ card.date|date:"d/m/Y" }}</td>
+                        <td class="red">{{ card.days_overdue }} jours</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>Aucune carte en retard.</p>
+            {% endif %}
+
+</body>
+
+</html>

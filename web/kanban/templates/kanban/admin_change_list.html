@@ -1,0 +1,8 @@
+{% extends "admin/change_list.html" %}
+{% load i18n admin_urls %}
+{% block object-tools-items %}
+{{ block.super }}
+<li>
+    <a href="{% url 'kanban:admin_export_form' %}" class="historylink">Exporter Rapport HTML</a>
+</li>
+{% endblock %}
