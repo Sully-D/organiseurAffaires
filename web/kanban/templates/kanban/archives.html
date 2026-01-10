@@ -12,7 +12,8 @@
     <div class="grid-view"
         style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
         {% for activity in activities %}
-        <div class="activity-card" data-id="{{ activity.id }}" style="cursor: pointer;">
+        <div class="activity-card" data-id="{{ activity.id }}" data-name="{{ activity.name }}"
+            data-date="{{ activity.date|date:'Y-m-d' }}" style="cursor: pointer;">
             <div class="card-header">
                 <span class="date"><i class="fa-regular fa-calendar"></i> {{ activity.date|date:"d/m/Y" }}</span>
                 {% if activity.tags.all %}
