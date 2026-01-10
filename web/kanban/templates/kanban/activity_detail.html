@@ -88,8 +88,8 @@
                     </label>
                 </div>
 
-                <input type="text" value="{{ scelle.info }}" placeholder="Infos supplémentaires..."
-                    class="edit-input scelle-info" onblur="updateScelle({{ scelle.id }}, 'info', this.value)" {% if not user.is_superuser %}disabled{% endif %}>
+                <textarea placeholder="Infos supplémentaires..." class="edit-input scelle-info" rows="2"
+                    onblur="updateScelle({{ scelle.id }}, 'info', this.value)" {% if not user.is_superuser %}disabled{% endif %}>{{ scelle.info }}</textarea>
 
                 <!-- Traitements -->
                 <div class="sub-section">
