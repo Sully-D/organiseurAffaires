@@ -1,0 +1,499 @@
+{% extends 'kanban/base.html' %}
+
+{% block content %}
+<div class="board-container">
+    {% for col_data in columns_data %}
+    <div class="kanban-column" data-id="{{ col_data.column.id }}">
+        <div class="column-header">
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <h2>{{ col_data.column.name }}</h2>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="count">{{ col_data.activities|length }}</span>
+                    <!-- Sort Dropdown -->
+                    <div class="sort-dropdown">
+                        <button class="sort-btn" onclick="toggleSortMenu(this)">
+                            <i class="fa-solid fa-arrow-down-short-wide"></i>
+                        </button>
+                        <div class="sort-menu">
+                            <div class="sort-item" onclick="sortColumn({{ col_data.column.id }}, 'date', 'asc')">
+                                <i class="fa-solid fa-calendar-arrow-up"></i> Date (Ancien > Récent)
+                            </div>
+                            <div class="sort-item" onclick="sortColumn({{ col_data.column.id }}, 'date', 'desc')">
+                                <i class="fa-solid fa-calendar-arrow-down"></i> Date (Récent > Ancien)
+                            </div>
+                            <div class="sort-item" onclick="sortColumn({{ col_data.column.id }}, 'name', 'asc')">
+                                <i class="fa-solid fa-arrow-down-a-z"></i> Nom (A-Z)
+                            </div>
+                            <div class="sort-item" onclick="sortColumn({{ col_data.column.id }}, 'name', 'desc')">
+                                <i class="fa-solid fa-arrow-up-a-z"></i> Nom (Z-A)
+                            </div>
+                        </div>
+                    </div>
+                    <button class="add-activity-btn" onclick="createActivity({{ col_data.column.id }})">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="column-body">
+            {% for activity in col_data.activities %}
+            {% if col_data.column.name == 'En attente' or col_data.column.name == 'Terminé' or col_data.column.name == 'CTA' %}
+            {% include "kanban/card_snippet.html" with activity=activity hide_urgency=True %}
+            {% else %}
+            {% include "kanban/card_snippet.html" with activity=activity %}
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Activity Detail Modal -->
+<div id="activityModal" class="modal-overlay">
+    <div class="modal-content" id="modalContent">
+        <!-- Content loaded via AJAX -->
+        <div class="modal-header">
+            <h2>Chargement...</h2>
+            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+        </div>
+        <div class="modal-body">
+            <p style="color: #94a3b8;">Récupération des données...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Global Helper functions
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Sort Functions
+    function toggleSortMenu(btn) {
+        // Close other menus
+        document.querySelectorAll('.sort-menu.active').forEach(m => {
+            if (m !== btn.nextElementSibling) m.classList.remove('active');
+        });
+        const menu = btn.nextElementSibling;
+        menu.classList.toggle('active');
+    }
+
+    // Close sort menu on outside click
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.sort-dropdown')) {
+            document.querySelectorAll('.sort-menu.active').forEach(m => m.classList.remove('active'));
+        }
+    });
+
+    function sortColumn(columnId, criteria, direction) {
+        const columnBody = document.querySelector(`.kanban-column[data-id="${columnId}"] .column-body`);
+        const cards = Array.from(columnBody.querySelectorAll('.activity-card'));
+
+        cards.sort((a, b) => {
+            let valA = a.getAttribute(`data-${criteria}`).toLowerCase();
+            let valB = b.getAttribute(`data-${criteria}`).toLowerCase();
+
+            if (valA < valB) return direction === 'asc' ? -1 : 1;
+            if (valA > valB) return direction === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        // Re-append to sort
+        cards.forEach(card => columnBody.appendChild(card));
+
+        // Close menu
+        document.querySelectorAll('.sort-menu.active').forEach(m => m.classList.remove('active'));
+    }
+
+    // Modal Functions
+    function openModal() {
+        document.getElementById('activityModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('activityModal').classList.remove('active');
+    }
+
+    // Close on outside click
+    document.getElementById('activityModal').addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeModal();
+        }
+    });
+
+    // Global Search Filter
+    const searchInput = document.getElementById('global-search');
+    if (searchInput) {
+        searchInput.addEventListener('input', function (e) {
+            const query = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.activity-card');
+
+            cards.forEach(card => {
+                const name = (card.getAttribute('data-name') || '').toLowerCase();
+                const date = (card.getAttribute('data-date') || '').toLowerCase();
+                const textHTML = card.innerHTML.toLowerCase();
+
+                if (name.includes(query) || date.includes(query) || textHTML.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Helper to find column ID by name
+    function getColumnIdByName(name) {
+        const headers = document.querySelectorAll('.kanban-column h2');
+        for (let h2 of headers) {
+            if (h2.innerText.trim() === name) {
+                return h2.closest('.kanban-column').getAttribute('data-id');
+            }
+        }
+        return null;
+    }
+
+    // Toggle Done Checkbox
+    function toggleDone(event, activityId, checkbox) {
+        event.stopPropagation();
+
+        const doneColumnId = getColumnIdByName("Terminé");
+        if (!doneColumnId) {
+            console.error('Colonne "Terminé" introuvable');
+            return;
+        }
+
+        let targetColumnId;
+        // If moving to Done
+        if (checkbox.checked) {
+            targetColumnId = doneColumnId;
+        } else {
+            // If moving out of Done, fallback to "À faire" or first column
+            targetColumnId = getColumnIdByName("À faire");
+            if (!targetColumnId) {
+                // Fallback to first column that is NOT "Terminé"
+                const firstCol = document.querySelector('.kanban-column:not([data-id="' + doneColumnId + '"])');
+                if (firstCol) targetColumnId = firstCol.getAttribute('data-id');
+            }
+        }
+
+        if (targetColumnId) {
+            fetch('{% url "kanban:move_activity" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    activity_id: activityId,
+                    column_id: targetColumnId
+                })
+            }).then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        // Move card visually
+                        const card = checkbox.closest('.activity-card');
+                        const targetBody = document.querySelector(`.kanban-column[data-id="${targetColumnId}"] .column-body`);
+                        targetBody.appendChild(card);
+
+                        // Update counters (simplistic)
+                        // Ideally we should refetch counts or decrement old/increment new
+                        // We lost reference to old parent.
+                        // For now, let's just accept visual move. 
+                        // Ideally re-fetch or robust DOM count update.
+
+                        // Refresh virtual columns state
+                        refreshActivityColumns(activityId);
+                    }
+                });
+        }
+    }
+
+    function createActivity(columnId) {
+        fetch('/api/activity/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ column_id: columnId })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const column = document.querySelector(`.kanban-column[data-id="${columnId}"] .column-body`);
+
+                    // Append new card
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = data.card_html;
+                    const newCard = tempDiv.firstElementChild;
+                    column.appendChild(newCard);
+
+                    // Update count
+                    const countEl = column.parentElement.querySelector('.count');
+                    if (countEl) countEl.innerText = parseInt(countEl.innerText) + 1;
+
+                    // Scroll to new card
+                    newCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+                    // Open edit modal directly
+                    newCard.click();
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            });
+    }
+
+    function deleteActivity(event, activityId) {
+        event.stopPropagation(); // Prevent opening modal
+        if (!confirm('Êtes-vous sûr de vouloir supprimer cette activité ?')) return;
+
+        fetch(`/api/activity/${activityId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Remove ALL instances of this card (virtual duplicates)
+                    const cards = document.querySelectorAll(`.activity-card[data-id="${activityId}"]`);
+                    cards.forEach(card => {
+                        const countEl = card.closest('.kanban-column').querySelector('.count');
+                        if (countEl) countEl.innerText = parseInt(countEl.innerText) - 1;
+                        card.remove();
+                    });
+                } else {
+                    alert("Erreur lors de la suppression");
+                }
+            });
+    }
+
+    // Helper to cleanup duplicates after move
+    function cleanupDuplicates(activityId, keepingCardElement) {
+        // If a card is moved, it might need to disappear from other columns where it was virtual.
+        // Or if moved TO a state where it shouldn't be virtual anymore.
+        // Simplest strategy: Remove getAll other instances of this ID.
+        // Because a card can only physically be in one place + virtually in others IF conditions met.
+        // If we move it in JS, we are changing its state. 
+        // Force refresh is best but costy.
+        // Let's remove other instances to avoid confusion.
+
+        const allInstances = document.querySelectorAll(`.activity-card[data-id="${activityId}"]`);
+        allInstances.forEach(card => {
+            if (card !== keepingCardElement) {
+                // Update count of that column
+                const countEl = card.closest('.kanban-column').querySelector('.count');
+                if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
+                card.remove();
+            }
+        });
+    }
+
+    // Refresh Activity Columns (Virtual Presence)
+    function refreshActivityColumns(activityId) {
+        fetch(`/api/activity/${activityId}/columns/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const targetColumnIds = data.columns.map(String);
+                    const cardHTML = data.card_html;
+
+                    // 1. Iterate all columns
+                    const allColumns = document.querySelectorAll('.kanban-column');
+                    allColumns.forEach(col => {
+                        const colId = col.getAttribute('data-id');
+                        const body = col.querySelector('.column-body');
+                        const existingCard = body.querySelector(`.activity-card[data-id="${activityId}"]`);
+
+                        if (targetColumnIds.includes(colId)) {
+                            if (existingCard) {
+                                // Update content
+                                const temp = document.createElement('div');
+                                temp.innerHTML = cardHTML;
+                                const newCard = temp.firstElementChild;
+                                body.replaceChild(newCard, existingCard);
+                            } else {
+                                // Append new card
+                                const temp = document.createElement('div');
+                                temp.innerHTML = cardHTML;
+                                const newCard = temp.firstElementChild;
+                                body.appendChild(newCard);
+
+                                // Update count
+                                const countEl = col.querySelector('.count');
+                                if (countEl) countEl.innerText = parseInt(countEl.innerText) + 1;
+                            }
+                        } else {
+                            // Should NOT be in this column
+                            if (existingCard) {
+                                existingCard.remove();
+                                // Update count
+                                const countEl = col.querySelector('.count');
+                                if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
+                            }
+                        }
+                    });
+                }
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const csrftoken = getCookie('csrftoken');
+
+        // Column Sorting
+        var board = document.querySelector('.board-container');
+        Sortable.create(board, {
+            animation: 150,
+            handle: '.column-header', // Only drag by header
+            ghostClass: 'sortable-ghost',
+            onEnd: function (evt) {
+                var order = this.toArray();
+                fetch('{% url "kanban:update_column_order" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: JSON.stringify({ order: order })
+                });
+            }
+        });
+
+        // Activity sorting within and between columns
+        var columns = document.querySelectorAll('.column-body');
+        columns.forEach(function (col) {
+            Sortable.create(col, {
+                group: 'shared', // Allow dragging between lists
+                animation: 150,
+                ghostClass: 'sortable-ghost',
+                onEnd: function (evt) {
+                    var itemEl = evt.item;  // dragged HTMLElement
+                    var newColumnId = itemEl.closest('.kanban-column').getAttribute('data-id');
+                    var activityId = itemEl.getAttribute('data-id');
+
+                    // If dropped in the same list, we might implement reordering later
+                    // If dropped in another list, update the column
+
+                    if (evt.to !== evt.from) {
+                        // Check if moved to "Terminé"
+                        const toColumn = evt.to.closest('.kanban-column');
+                        const h2 = toColumn.querySelector('h2');
+                        const isDone = h2 && h2.innerText.trim() === 'Terminé';
+
+                        const card = itemEl;
+                        const checkbox = card.querySelector('.done-checkbox');
+
+                        // Force update with a small delay to ensure DOM is ready
+                        setTimeout(() => {
+                            if (checkbox) {
+                                checkbox.checked = isDone;
+                                if (!isDone) {
+                                    checkbox.removeAttribute('checked');
+                                } else {
+                                    checkbox.setAttribute('checked', 'checked');
+                                }
+                            }
+                        }, 10);
+
+                        fetch('{% url "kanban:move_activity" %}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': csrftoken
+                            },
+                            body: JSON.stringify({
+                                activity_id: activityId,
+                                column_id: newColumnId
+                            })
+                        })
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.status === 'success') {
+                                    // Cleanup duplicates
+                                    cleanupDuplicates(activityId, itemEl);
+
+                                    // Refresh all columns to ensure virtual state is correct
+                                    refreshActivityColumns(activityId);
+                                } else {
+                                    console.error('Error moving activity');
+                                    // Revert move if failed?
+                                }
+                            });
+                    }
+                }
+            });
+        });
+
+        // Global Activity Click Handler (Delegation)
+        document.querySelector('.board-container').addEventListener('click', function (e) {
+            const card = e.target.closest('.activity-card');
+            if (!card) return;
+
+            // Prevent if clicking delete button or drag handles (if any specific logic needed)
+            if (e.target.closest('.delete-activity-btn')) return;
+
+            const activityId = card.getAttribute('data-id');
+            openModal();
+
+            // Show loading
+            const modalContent = document.getElementById('modalContent');
+            modalContent.innerHTML = `
+                <div class="modal-header">
+                    <h2>Chargement...</h2>
+                    <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p style="color: #94a3b8; text-align: center; padding: 2rem;">
+                        <i class="fa-solid fa-spinner fa-spin"></i> Récupération des données...
+                    </p>
+                </div>
+            `;
+
+            // Fetch content
+            fetch(`/activity/${activityId}/`)
+                .then(response => response.text())
+                .then(html => {
+                    modalContent.innerHTML = html;
+                    // Execute scripts in the loaded content
+                    const scripts = modalContent.querySelectorAll('script');
+                    scripts.forEach(script => {
+                        const newScript = document.createElement('script');
+                        newScript.textContent = script.textContent;
+                        document.body.appendChild(newScript);
+                        document.body.removeChild(newScript);
+                    });
+                })
+                .catch(err => {
+                    modalContent.innerHTML = `
+                        <div class="modal-header">
+                            <h2>Erreur</h2>
+                            <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <p style="color: #ef4444;">Impossible de charger les détails.</p>
+                        </div>
+                    `;
+                });
+        });
+
+    });
+    window.refreshActivityColumns = refreshActivityColumns;
+</script>
+{% endblock %}

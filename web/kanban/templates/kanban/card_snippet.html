@@ -1,0 +1,30 @@
+<div class="activity-card {% if not hide_urgency %}{{ activity.urgency_class }}{% endif %}" data-id="{{ activity.id }}" data-name="{{ activity.name }}"
+    data-date="{{ activity.date|date:'Y-m-d' }}">
+    <div class="card-header">
+        <span class="date"><i class="fa-regular fa-calendar"></i> {{ activity.date|date:"d/m/Y" }}</span>
+        {% if activity.tags.all %}
+        <div class="tags">
+            {% for tag in activity.tags.all %}
+            <span class="tag" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    <h3 class="card-title">{{ activity.name }}</h3>
+    <div class="card-description">
+        {{ activity.description|truncatechars:100 }}
+    </div>
+    <div class="card-stats">
+        {% with scelles_count=activity.scelles.count %}
+        {% if scelles_count > 0 %}
+        <span class="stat" title="Scellés"><i class="fa-solid fa-box"></i> {{ scelles_count }}</span>
+        {% endif %}
+        {% endwith %}
+    </div>
+    <button class="delete-activity-btn" onclick="deleteActivity(event, {{ activity.id }})">
+        <i class="fa-solid fa-trash"></i>
+    </button>
+    <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
+        <input type="checkbox" class="done-checkbox" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %}>
+    </div>
+</div>

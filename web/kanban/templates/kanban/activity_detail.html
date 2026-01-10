@@ -1,0 +1,592 @@
+<div class="modal-header">
+    <div class="modal-title-group" style="width: 100%;">
+        <input type="text" id="activityName" value="{{ activity.name }}" class="edit-input title-input"
+            onblur="saveActivityField('name', this.value)">
+        <div class="modal-meta">
+            <span class="date">
+                <i class="fa-regular fa-calendar"></i>
+                <input type="date" id="activityDate" value="{{ activity.date|date:'Y-m-d' }}"
+                    class="edit-input date-input" onchange="saveActivityField('date', this.value)">
+            </span>
+        </div>
+    </div>
+    <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+</div>
+
+<div class="modal-body">
+    <!-- Tags Management -->
+    <div class="modal-section">
+        <h3>Tags <button class="btn-icon-sm" onclick="toggleTagSelector()" title="Gérer les tags"><i
+                    class="fa-solid fa-plus"></i></button></h3>
+        <div class="tags" id="activityTags">
+            {% for tag in activity.tags.all %}
+            <span class="tag" style="background-color: {{ tag.color }};">
+                {{ tag.name }}
+                <span class="remove-tag" onclick="toggleTag({{ tag.id }})" title="Retirer">&times;</span>
+            </span>
+            {% endfor %}
+        </div>
+        <!-- Simple Tag Selector hidden by default -->
+        <div id="tagSelector" class="tag-selector" style="display: none; margin-top: 10px;">
+            <div class="tag-creation">
+                <input type="text" id="newTagName" placeholder="Nouveau tag..." class="edit-input"
+                    style="width: auto; flex: 1;">
+                <input type="color" id="newTagColor" value="#3b82f6" class="color-input" title="Couleur">
+                <button class="btn-icon-sm" onclick="createTag()" title="Créer"><i
+                        class="fa-solid fa-check"></i></button>
+            </div>
+            <p class="text-sm text-secondary" style="margin-top:0.5rem;">Sélectionner un tag existant :</p>
+            <div class="tags-options">
+                {% for t in all_tags %}
+                <span class="tag option" style="background-color: {{ t.color }}; cursor: pointer; opacity: 0.7;"
+                    onclick="toggleTag({{ t.id }})">
+                    {{ t.name }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Description -->
+    <div class="modal-section description">
+        <h3>Description</h3>
+        <textarea id="activityDescription" class="edit-input area-input" rows="4"
+            onblur="saveActivityField('description', this.value)">{{ activity.description }}</textarea>
+    </div>
+
+    <!-- Scellés Management -->
+    <div class="modal-section">
+        <h3>
+            <i class="fa-solid fa-box"></i> Scellés
+            <button class="btn-icon-sm" onclick="addScelle()" title="Ajouter un scellé"><i
+                    class="fa-solid fa-plus"></i></button>
+        </h3>
+        <div class="scelles-list" id="scellesList">
+            {% for scelle in activity.scelles.all %}
+            <div class="scelle-item" id="scelle-{{ scelle.id }}">
+                <div class="scelle-header-edit">
+                    <input type="text" value="{{ scelle.name }}" class="edit-input scelle-name"
+                        onblur="updateScelle({{ scelle.id }}, 'name', this.value)">
+                    <button class="btn-icon-danger" onclick="deleteScelle({{ scelle.id }})"><i
+                            class="fa-solid fa-trash"></i></button>
+                </div>
+
+                <div class="scelle-properties">
+                    <label class="checkbox-label">
+                        <input type="checkbox" {% if scelle.cta_validated %}checked{% endif %}
+                            onchange="updateScelle({{ scelle.id }}, 'cta_validated', this.checked)"> CTA
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" {% if scelle.reparations_validated %}checked{% endif %}
+                            onchange="updateScelle({{ scelle.id }}, 'reparations_validated', this.checked)"> Rép.
+                    </label>
+                </div>
+
+                <input type="text" value="{{ scelle.info }}" placeholder="Infos supplémentaires..."
+                    class="edit-input scelle-info" onblur="updateScelle({{ scelle.id }}, 'info', this.value)">
+
+                <!-- Traitements -->
+                <div class="sub-section">
+                    <h5>
+                        Traitements
+                        <button class="btn-icon-sm" onclick="showAddInput('traitement', {{ scelle.id }})"
+                            title="Ajouter un traitement"><i class="fa-solid fa-plus"></i></button>
+                    </h5>
+
+                    <div id="add-traitement-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
+                        <input type="text" id="new-traitement-desc-{{ scelle.id }}" placeholder="Description..."
+                            class="edit-input" onkeydown="if(event.key==='Enter') addTraitement({{ scelle.id }})">
+                        <button class="btn-icon-sm" onclick="addTraitement({{ scelle.id }})"><i
+                                class="fa-solid fa-check"></i></button>
+                    </div>
+
+                    <ul class="task-list" id="traitements-list-{{ scelle.id }}">
+                        {% for t in scelle.traitements.all %}
+                        <li id="traitement-{{ t.id }}" class="{% if t.done %}done{% endif %}">
+                            <i onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;"
+                                class="fa-{% if t.done %}solid fa-check-square{% else %}regular fa-square{% endif %}"></i>
+                            <span style="flex: 1;">{{ t.description }}</span>
+                            {% if t.done_at %}<span class="done-date">({{ t.done_at|date:"d/m" }})</span>{% endif %}
+                            <button class="btn-icon-danger-sm" onclick="deleteTraitement({{ t.id }})"><i
+                                    class="fa-solid fa-trash"></i></button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <!-- Tâches -->
+                <div class="sub-section">
+                    <h5>
+                        Tâches
+                        <button class="btn-icon-sm" onclick="showAddInput('tache', {{ scelle.id }})"
+                            title="Ajouter une tâche"><i class="fa-solid fa-plus"></i></button>
+                    </h5>
+
+                    <div id="add-tache-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
+                        <input type="text" id="new-tache-desc-{{ scelle.id }}" placeholder="Description..."
+                            class="edit-input" onkeydown="if(event.key==='Enter') addTache({{ scelle.id }})">
+                        <button class="btn-icon-sm" onclick="addTache({{ scelle.id }})"><i
+                                class="fa-solid fa-check"></i></button>
+                    </div>
+
+                    <ul class="task-list" id="taches-list-{{ scelle.id }}">
+                        {% for t in scelle.taches.all %}
+                        <li id="tache-{{ t.id }}" class="{% if t.done %}done{% endif %}">
+                            <i onclick="toggleTache({{ t.id }})" style="cursor: pointer;"
+                                class="fa-{% if t.done %}solid fa-check-circle{% else %}regular fa-circle{% endif %}"></i>
+                            <span style="flex: 1;">{{ t.description }}</span>
+                            <button class="btn-icon-danger-sm" onclick="deleteTache({{ t.id }})"><i
+                                    class="fa-solid fa-trash"></i></button>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<script>
+    var activityId = {{ activity.id }};
+
+    function saveActivityField(field, value) {
+        let data = {};
+        data[field] = value;
+
+        fetch(`/api/activity/${activityId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(data)
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status !== 'success') alert('Erreur sauvegarde');
+            });
+    }
+
+    function toggleTagSelector() {
+        const el = document.getElementById('tagSelector');
+        el.style.display = el.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function createTag() {
+        const nameInput = document.getElementById('newTagName');
+        const colorInput = document.getElementById('newTagColor');
+        const name = nameInput.value.trim();
+        const color = colorInput.value;
+
+        if (!name) return;
+
+        // 1. Create Tag
+        fetch('/api/tags/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ name: name, color: color })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // 2. Add tag to activity
+                    toggleTag(data.tag.id);
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            });
+    }
+
+    function toggleTag(tagId) {
+        fetch(`/api/activity/${activityId}/toggle-tag/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ tag_id: tagId })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reload modal content to refresh list (easiest way to sync UI)
+                    // Or manually manipulate DOM. Reloading partial is safer for state.
+                    fetch(`/activity/${activityId}/`)
+                        .then(r => r.text())
+                        .then(html => {
+                            document.getElementById('modalContent').innerHTML = html;
+                            // Re-open selector if it was open?
+                            // Execute scripts in the loaded content
+                            const scripts = document.getElementById('modalContent').querySelectorAll('script');
+                            scripts.forEach(script => {
+                                const newScript = document.createElement('script');
+                                newScript.textContent = script.textContent;
+                                document.body.appendChild(newScript);
+                                document.body.removeChild(newScript);
+                            });
+                        });
+                }
+            });
+    }
+
+    function addScelle() {
+        fetch(`/api/activity/${activityId}/add-scelle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Reload modal
+                    fetch(`/activity/${activityId}/`)
+                        .then(r => r.text())
+                        .then(html => {
+                            document.getElementById('modalContent').innerHTML = html;
+                            // Execute scripts
+                            const scripts = document.getElementById('modalContent').querySelectorAll('script');
+                            scripts.forEach(script => {
+                                const newScript = document.createElement('script');
+                                newScript.textContent = script.textContent;
+                                document.body.appendChild(newScript);
+                                document.body.removeChild(newScript);
+                            });
+                        });
+                }
+            });
+    }
+
+    function updateScelle(scelleId, field, value) {
+        let data = {};
+        data[field] = value;
+
+        fetch(`/api/scelle/${scelleId}/update/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify(data)
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (window.parent && window.parent.refreshActivityColumns) {
+                        window.parent.refreshActivityColumns(activityId);
+                    }
+                }
+            });
+    }
+
+    function deleteScelle(scelleId) {
+        if (!confirm('Supprimer ce scellé ?')) return;
+
+        fetch(`/api/scelle/${scelleId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`scelle-${scelleId}`).remove();
+                }
+            });
+    }
+
+    // Traitements & Tâches JS
+    function showAddInput(type, scelleId) {
+        const el = document.getElementById(`add-${type}-input-${scelleId}`);
+        el.style.display = el.style.display === 'none' ? 'flex' : 'none';
+        if (el.style.display === 'flex') {
+            document.getElementById(`new-${type}-desc-${scelleId}`).focus();
+        }
+    }
+
+    function addTraitement(scelleId) {
+        const input = document.getElementById(`new-traitement-desc-${scelleId}`);
+        const description = input.value.trim();
+        if (!description) return;
+
+        fetch(`/api/scelle/${scelleId}/add-traitement/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ description: description })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    refreshModal();
+                }
+            });
+    }
+
+    function toggleTraitement(id) {
+        fetch(`/api/traitement/${id}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const li = document.getElementById(`traitement-${id}`);
+                    const icon = li.querySelector('i');
+                    if (data.done) {
+                        li.classList.add('done');
+                        icon.className = 'fa-solid fa-check-square';
+                    } else {
+                        li.classList.remove('done');
+                        icon.className = 'fa-regular fa-square';
+                    }
+                    refreshModal(); // To update date if needed
+                    // Trigger refresh
+                    if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
+                }
+            });
+    }
+
+    function deleteTraitement(id) {
+        if (!confirm('Supprimer ce traitement ?')) return;
+        fetch(`/api/traitement/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`traitement-${id}`).remove();
+                    if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
+                }
+            });
+    }
+
+    function addTache(scelleId) {
+        const input = document.getElementById(`new-tache-desc-${scelleId}`);
+        const description = input.value.trim();
+        if (!description) return;
+
+        fetch(`/api/scelle/${scelleId}/add-tache/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ description: description })
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    refreshModal();
+                }
+            });
+    }
+
+    function toggleTache(id) {
+        fetch(`/api/tache/${id}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const li = document.getElementById(`tache-${id}`);
+                    const icon = li.querySelector('i');
+                    if (data.done) {
+                        li.classList.add('done');
+                        icon.className = 'fa-solid fa-check-circle';
+                    } else {
+                        li.classList.remove('done');
+                        icon.className = 'fa-regular fa-circle';
+                    }
+                    if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
+                }
+            });
+    }
+
+    function deleteTache(id) {
+        if (!confirm('Supprimer cette tâche ?')) return;
+        fetch(`/api/tache/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    document.getElementById(`tache-${id}`).remove();
+                    if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
+                }
+            });
+    }
+
+    function refreshModal() {
+        fetch(`/activity/${activityId}/`)
+            .then(r => r.text())
+            .then(html => {
+                document.getElementById('modalContent').innerHTML = html;
+                const scripts = document.getElementById('modalContent').querySelectorAll('script');
+                scripts.forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    document.body.appendChild(newScript);
+                    document.body.removeChild(newScript);
+                });
+
+                // Trigger global refresh of columns
+                if (window.refreshActivityColumns) { // Check if we are in expected context
+                    window.refreshActivityColumns(activityId);
+                } else if (window.parent && window.parent.refreshActivityColumns) {
+                    window.parent.refreshActivityColumns(activityId);
+                }
+            });
+    }
+
+    // Helper needed since this is partial HTML inserted into page, 
+    // it might not have access to global getCookie if not defined in global scope or if scope issues.
+    // Ideally getCookie should be global in board.html.
+</script>
+
+<style>
+    /* Local styles for inputs in this view */
+    .edit-input {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--text-primary);
+        border-radius: 4px;
+        padding: 0.5rem;
+        width: 100%;
+        font-family: inherit;
+    }
+
+    .edit-input:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .title-input {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        background: transparent;
+        border: 1px solid transparent;
+    }
+
+    .title-input:hover {
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .title-input:focus {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: var(--accent);
+    }
+
+    .date-input {
+        width: auto;
+        font-size: 0.85rem;
+        padding: 0.25rem 0.5rem;
+        color: var(--text-secondary);
+    }
+
+    .area-input {
+        resize: vertical;
+        line-height: 1.6;
+    }
+
+    .btn-icon-sm {
+        background: rgba(255, 255, 255, 0.1);
+        border: none;
+        color: var(--text-secondary);
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+        font-size: 0.75rem;
+        cursor: pointer;
+        margin-left: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .btn-icon-sm:hover {
+        background: var(--accent);
+        color: white;
+    }
+
+    .remove-tag {
+        margin-left: 6px;
+        cursor: pointer;
+        opacity: 0.7;
+    }
+
+    .remove-tag:hover {
+        opacity: 1;
+    }
+
+    .tag-selector {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 1rem;
+        border-radius: 8px;
+    }
+
+    .tags-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .scelle-header-edit {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .scelle-name {
+        font-weight: 600;
+    }
+
+    .btn-icon-danger {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        border: none;
+        border-radius: 4px;
+        width: 32px;
+        cursor: pointer;
+    }
+
+    .btn-icon-danger:hover {
+        background: #ef4444;
+        color: white;
+    }
+
+    .scelle-properties {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+    }
+
+    .sub-section-compact {
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        color: var(--text-secondary);
+    }
+</style>
