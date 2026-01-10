@@ -465,3 +465,19 @@ def get_activity_columns(request, activity_id):
         import traceback
         print(traceback.format_exc())
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def suggestion_traitements(request):
+    try:
+        from .models import Traitement
+        descriptions = Traitement.objects.filter(description__isnull=False).exclude(description__exact='').values_list('description', flat=True).distinct().order_by('description')
+        return JsonResponse({'status': 'success', 'suggestions': list(descriptions)})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def suggestion_taches(request):
+    try:
+        from .models import Tache
+        descriptions = Tache.objects.filter(description__isnull=False).exclude(description__exact='').values_list('description', flat=True).distinct().order_by('description')
+        return JsonResponse({'status': 'success', 'suggestions': list(descriptions)})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

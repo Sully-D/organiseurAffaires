@@ -95,7 +95,8 @@
 
                     <div id="add-traitement-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
                         <input type="text" id="new-traitement-desc-{{ scelle.id }}" placeholder="Description..."
-                            class="edit-input" onkeydown="if(event.key==='Enter') addTraitement({{ scelle.id }})">
+                            class="edit-input" list="traitement-suggestions"
+                            onkeydown="if(event.key==='Enter') addTraitement({{ scelle.id }})">
                         <button class="btn-icon-sm" onclick="addTraitement({{ scelle.id }})"><i
                                 class="fa-solid fa-check"></i></button>
                     </div>
@@ -124,7 +125,8 @@
 
                     <div id="add-tache-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
                         <input type="text" id="new-tache-desc-{{ scelle.id }}" placeholder="Description..."
-                            class="edit-input" onkeydown="if(event.key==='Enter') addTache({{ scelle.id }})">
+                            class="edit-input" list="tache-suggestions"
+                            onkeydown="if(event.key==='Enter') addTache({{ scelle.id }})">
                         <button class="btn-icon-sm" onclick="addTache({{ scelle.id }})"><i
                                 class="fa-solid fa-check"></i></button>
                     </div>
@@ -145,6 +147,9 @@
             {% endfor %}
         </div>
     </div>
+</div>
+<datalist id="traitement-suggestions"></datalist>
+<datalist id="tache-suggestions"></datalist>
 </div>
 
 <script>
@@ -454,6 +459,42 @@
     // Helper needed since this is partial HTML inserted into page, 
     // it might not have access to global getCookie if not defined in global scope or if scope issues.
     // Ideally getCookie should be global in board.html.
+
+    function loadSuggestions() {
+        fetch('/api/suggestions/traitements/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const dl = document.getElementById('traitement-suggestions');
+                    if (dl) {
+                        dl.innerHTML = '';
+                        data.suggestions.forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item;
+                            dl.appendChild(opt);
+                        });
+                    }
+                }
+            });
+
+        fetch('/api/suggestions/taches/')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const dl = document.getElementById('tache-suggestions');
+                    if (dl) {
+                        dl.innerHTML = '';
+                        data.suggestions.forEach(item => {
+                            const opt = document.createElement('option');
+                            opt.value = item;
+                            dl.appendChild(opt);
+                        });
+                    }
+                }
+            });
+    }
+
+    loadSuggestions();
 </script>
 
 <style>

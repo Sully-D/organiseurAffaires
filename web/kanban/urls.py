@@ -22,4 +22,6 @@ urlpatterns = [
     path('api/tache/<int:tache_id>/toggle/', views.toggle_tache, name='toggle_tache'),
     path('api/tache/<int:tache_id>/delete/', views.delete_tache, name='delete_tache'),
     path('api/activity/<int:activity_id>/columns/', views.get_activity_columns, name='get_activity_columns'),
+    path('api/suggestions/traitements/', views.suggestion_traitements, name='suggestion_traitements'),
+    path('api/suggestions/taches/', views.suggestion_taches, name='suggestion_taches'),
 ]
