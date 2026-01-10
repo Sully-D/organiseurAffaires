@@ -1,5 +1,5 @@
 <div class="modal-header">
-    <div class="modal-title-group" style="width: 100%;">
+    <div class="modal-title-group" style="flex: 1; margin-right: 1rem;">
         <input type="text" id="activityName" value="{{ activity.name }}" class="edit-input title-input"
             onblur="saveActivityField('name', this.value)">
         <div class="modal-meta">
@@ -10,9 +10,14 @@
             </span>
         </div>
     </div>
-    <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+    <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
+        <button class="modal-close" onclick="archiveCurrentActivity({{ activity.id }})" title="Archiver ce dossier"
+            style="margin-top: -2px;">
+            <i class="fa-solid fa-box-archive"></i>
+        </button>
+        <button class="modal-close" onclick="closeModal()"><i class="fa-solid fa-times"></i></button>
+    </div>
 </div>
-
 <div class="modal-body">
     <!-- Tags Management -->
     <div class="modal-section">
@@ -154,6 +159,36 @@
 
 <script>
     var activityId = {{ activity.id }};
+
+    function archiveCurrentActivity(id) {
+        if (!confirm("Archiver ce dossier ? Il sera déplacé dans la vue 'Archivé'.")) return;
+
+        fetch(`/api/activity/${id}/archive/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        }).then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeModal();
+                    // Find and remove card from board
+                    const card = document.querySelector(`.activity-card[data-id="${id}"]`);
+                    if (card) {
+                        card.remove();
+                        // Ideally check if column count needs update, but simple remove is visual enough vs full refresh
+                    }
+                    // Refresh parent if function exists (handles counts etc)
+                    if (window.parent && window.parent.refreshActivityColumns) {
+                        // refreshActivityColumns generally updates contents, might not handle full removal efficiently if we don't reload.
+                        // But card.remove() is immediate feedback.
+                    }
+                } else {
+                    alert('Erreur: ' + data.message);
+                }
+            });
+    }
 
     function saveActivityField(field, value) {
         let data = {};

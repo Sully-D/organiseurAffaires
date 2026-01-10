@@ -9,7 +9,7 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 
 def board(request):
-    columns = KanbanColumn.objects.all().order_by('order_index')
+    columns = KanbanColumn.objects.exclude(name='Archivé').order_by('order_index')
     
     # Organize activities by column
     columns_data = []
@@ -480,4 +480,41 @@ def suggestion_taches(request):
         descriptions = Tache.objects.filter(description__isnull=False).exclude(description__exact='').values_list('description', flat=True).distinct().order_by('description')
         return JsonResponse({'status': 'success', 'suggestions': list(descriptions)})
     except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def archives(request):
+    try:
+        archived_col = KanbanColumn.objects.get(name='Archivé')
+        activities = Activity.objects.filter(column=archived_col).order_by('-date')
+    except KanbanColumn.DoesNotExist:
+        activities = []
+    
+    context = {
+        'activities': activities,
+        'page_title': "Archives"
+    }
+    return render(request, 'kanban/archives.html', context)
+
+@require_POST
+def archive_activity(request, activity_id):
+    try:
+        activity = Activity.objects.get(id=activity_id)
+        archived_col, _ = KanbanColumn.objects.get_or_create(name='Archivé')
+        activity.column = archived_col
+        activity.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+@require_POST
+def unarchive_activity(request, activity_id):
+    try:
+        activity = Activity.objects.get(id=activity_id)
+        # Move back to "En attente" by default
+        target_col = KanbanColumn.objects.get(name='En attente')
+        activity.column = target_col
+        activity.save()
+        return JsonResponse({'status': 'success'})
+    except Exception as e:
+        # Fallback if "En attente" doesn't exist? (Unlikely)
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

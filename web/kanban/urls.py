@@ -24,4 +24,7 @@ urlpatterns = [
     path('api/activity/<int:activity_id>/columns/', views.get_activity_columns, name='get_activity_columns'),
     path('api/suggestions/traitements/', views.suggestion_traitements, name='suggestion_traitements'),
     path('api/suggestions/taches/', views.suggestion_taches, name='suggestion_taches'),
+    path('archives/', views.archives, name='archives'),
+    path('api/activity/<int:activity_id>/archive/', views.archive_activity, name='archive_activity'),
+    path('api/activity/<int:activity_id>/unarchive/', views.unarchive_activity, name='unarchive_activity'),
 ]

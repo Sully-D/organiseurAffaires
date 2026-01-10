@@ -30,7 +30,12 @@
                 <h1>Organiseur</h1>
             </div>
             <nav class="main-nav">
-                <a href="#" class="nav-item active"><i class="fa-solid fa-table-columns"></i> Tableau</a>
+                <a href="{% url 'kanban:board' %}"
+                    class="nav-item {% if request.resolver_match.url_name == 'board' %}active{% endif %}"><i
+                        class="fa-solid fa-table-columns"></i> Tableau</a>
+                <a href="{% url 'kanban:archives' %}"
+                    class="nav-item {% if request.resolver_match.url_name == 'archives' %}active{% endif %}"><i
+                        class="fa-solid fa-box-archive"></i> Archivé</a>
                 <a href="/admin/" class="nav-item"><i class="fa-solid fa-gears"></i> Admin</a>
             </nav>
 
