@@ -16,6 +16,7 @@ urlpatterns = [
     path('api/activity/<int:activity_id>/toggle-tag/', views.toggle_activity_tag, name='toggle_activity_tag'),
     path('api/activity/<int:activity_id>/add-scelle/', views.add_scelle, name='add_scelle'),
     path('api/scelle/<int:scelle_id>/update/', views.update_scelle, name='update_scelle'),
+    path('api/scelle/<int:scelle_id>/delete/', views.delete_scelle, name='delete_scelle'),
     path('api/tags/create/', views.create_tag, name='create_tag'),
     path('api/scelle/<int:scelle_id>/add-traitement/', views.add_traitement, name='add_traitement'),
     path('api/traitement/<int:traitement_id>/toggle/', views.toggle_traitement, name='toggle_traitement'),
