@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from .models import KanbanColumn, Activity, Tag, Traitement, Tache, Scelle
-from django.db.models import Q, F, Count
+from django.db.models import Q, F, Count, Exists, OuterRef
 import json
 from datetime import date, timedelta
 import json
@@ -29,7 +29,9 @@ def board(request):
                 )
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
             
         elif col.name == "Tâches":
@@ -43,7 +45,9 @@ def board(request):
                 )
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
             
         elif col.name == "CTA":
@@ -52,7 +56,9 @@ def board(request):
                 (Q(column__name="En cours") & Q(scelles__cta_validated=True))
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
             
         elif col.name == "Réparations":
@@ -61,7 +67,9 @@ def board(request):
                 (Q(column__name="En cours") & Q(scelles__reparations_validated=True))
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
 
         elif col.name == "En attente":
@@ -73,7 +81,9 @@ def board(request):
                 )
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
             
         elif col.name == "En cours":
@@ -90,17 +100,21 @@ def board(request):
                     (Q(scelles__traitements__done=False) | Q(scelles__taches__done=False)) &
                     Q(scelles__cta_validated=False) &
                     Q(scelles__reparations_validated=False) &
-                    ~Q(column__name__in=['Terminé', 'Archivé'])
+                    ~Q(column__name__in=['Terminé', 'Archivé', 'En attente'])
                 )
             ).prefetch_related('tags', 'scelles').distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
         
         else:
             activities = Activity.objects.filter(column=col).prefetch_related('tags', 'scelles').annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False))
+                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+                has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
             
         columns_data.append({
@@ -429,7 +443,12 @@ def delete_tache(request, tache_id):
 @require_POST
 def get_activity_columns(request, activity_id):
     try:
-        activity = Activity.objects.prefetch_related('tags', 'scelles').get(id=activity_id)
+        activity = Activity.objects.prefetch_related('tags', 'scelles').annotate(
+            pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
+            pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+            has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
+            has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
+        ).get(id=activity_id)
         
         # Calculate in which columns this activity should appear
         target_columns = []

@@ -2,8 +2,14 @@
     data-name="{{ activity.name }}" data-date="{{ activity.date|date:'Y-m-d' }}">
     <div class="card-header">
         <span class="date"><i class="fa-regular fa-calendar"></i> {{ activity.date|date:"d/m/Y" }}</span>
-        {% if activity.tags.all %}
+        {% if activity.tags.all or activity.has_cta > 0 or activity.has_reparations > 0 %}
         <div class="tags">
+            {% if activity.has_cta > 0 %}
+            <span class="tag" style="background-color: #ef4444; color: white;">CTA</span>
+            {% endif %}
+            {% if activity.has_reparations > 0 %}
+            <span class="tag" style="background-color: #f59e0b; color: white;">Rép.</span>
+            {% endif %}
             {% for tag in activity.tags.all %}
             <span class="tag" style="background-color: {{ tag.color }};">{{ tag.name }}</span>
             {% endfor %}
@@ -36,6 +42,7 @@
         {% endif %}
     </div>
     <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
-        <input type="checkbox" class="done-checkbox" autocomplete="off" onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
+        <input type="checkbox" class="done-checkbox" autocomplete="off"
+            onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
     </div>
 </div>

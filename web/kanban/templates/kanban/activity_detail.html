@@ -111,12 +111,12 @@
                     <ul class="task-list" id="traitements-list-{{ scelle.id }}">
                         {% for t in scelle.traitements.all %}
                         <li id="traitement-{{ t.id }}" class="{% if t.done %}done{% endif %}">
-                            <i {% if user.is_superuser %}onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;" {% endif %}
+                            <i {% if user.is_superuser %}onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;"
+                                {% endif %}
                                 class="fa-{% if t.done %}solid fa-check-square{% else %}regular fa-square{% endif %}"></i>
                             <span style="flex: 1;">{{ t.description }}</span>
                             {% if t.done_at %}<span class="done-date">({{ t.done_at|date:"d/m" }})</span>{% endif %}
-                            {% if user.is_superuser %}<button class="btn-icon-danger-sm"
-                                onclick="deleteTraitement({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
+                            {% if user.is_superuser %}<button class="btn-icon-danger-sm" onclick="deleteTraitement({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -473,6 +473,10 @@
     }
 
     function refreshModal() {
+        // Capture scroll position
+        const modalBody = document.querySelector('#modalContent .modal-body');
+        const scrollTop = modalBody ? modalBody.scrollTop : 0;
+
         fetch(`/activity/${activityId}/`)
             .then(r => r.text())
             .then(html => {
@@ -484,6 +488,12 @@
                     document.body.appendChild(newScript);
                     document.body.removeChild(newScript);
                 });
+
+                // Restore scroll position
+                const newModalBody = document.querySelector('#modalContent .modal-body');
+                if (newModalBody) {
+                    newModalBody.scrollTop = scrollTop;
+                }
 
                 // Trigger global refresh of columns
                 if (window.refreshActivityColumns) { // Check if we are in expected context
