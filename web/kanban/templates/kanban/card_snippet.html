@@ -1,5 +1,8 @@
 <div class="activity-card {% if not hide_urgency %}{{ activity.urgency_class }}{% endif %}" data-id="{{ activity.id }}"
-    data-name="{{ activity.name }}" data-date="{{ activity.date|date:'Y-m-d' }}">
+    data-name="{{ activity.name }}" data-date="{{ activity.date|date:'Y-m-d' }}"
+    data-pending-traitements="{{ activity.pending_traitements }}" data-pending-taches="{{ activity.pending_taches }}"
+    data-pending-traitement-names="{% for s in activity.scelles.all %}{% for t in s.traitements.all %}{% if not t.done %}{{ t.description|escape }}__SEP__{% endif %}{% endfor %}{% endfor %}"
+    data-pending-tache-names="{% for s in activity.scelles.all %}{% for t in s.taches.all %}{% if not t.done %}{{ t.description|escape }}__SEP__{% endif %}{% endfor %}{% endfor %}">
     <div class="card-header">
         <span class="date"><i class="fa-regular fa-calendar"></i> {{ activity.date|date:"d/m/Y" }}</span>
         {% if activity.tags.all or activity.has_cta > 0 or activity.has_reparations > 0 %}
@@ -43,6 +46,8 @@
     </div>
     <div class="done-checkbox-wrapper" onclick="event.stopPropagation()">
         <input type="checkbox" class="done-checkbox" autocomplete="off"
-            onchange="toggleDone(event, {{ activity.id }}, this)" {% if activity.column.name == 'Terminé' %}checked{% endif %} {% if not user.is_superuser %}disabled{% endif %}>
+            onchange="toggleDone(event, {{ activity.id }}, this)" 
+            {% if activity.column.name == 'Terminé' %}checked{% endif %} 
+            {% if not user.is_superuser %}disabled{% endif %}>
     </div>
 </div>

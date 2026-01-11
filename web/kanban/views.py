@@ -27,7 +27,12 @@ def board(request):
                     Q(scelles__cta_validated=False) & 
                     Q(scelles__reparations_validated=False)
                 )
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -43,7 +48,11 @@ def board(request):
                     Q(scelles__cta_validated=False) & 
                     Q(scelles__reparations_validated=False)
                 )
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -54,7 +63,11 @@ def board(request):
             activities = Activity.objects.filter(
                 Q(column=col) | 
                 (Q(column__name="En cours") & Q(scelles__cta_validated=True))
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -65,7 +78,11 @@ def board(request):
             activities = Activity.objects.filter(
                 Q(column=col) | 
                 (Q(column__name="En cours") & Q(scelles__reparations_validated=True))
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -79,7 +96,12 @@ def board(request):
                     Q(column__name="En cours") & 
                     (Q(scelles__cta_validated=True) | Q(scelles__reparations_validated=True))
                 )
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -102,7 +124,11 @@ def board(request):
                     Q(scelles__reparations_validated=False) &
                     ~Q(column__name__in=['Terminé', 'Archivé', 'En attente'])
                 )
-            ).prefetch_related('tags', 'scelles').distinct().annotate(
+            ).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).distinct().annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -110,7 +136,11 @@ def board(request):
             ).order_by('date')
         
         else:
-            activities = Activity.objects.filter(column=col).prefetch_related('tags', 'scelles').annotate(
+            activities = Activity.objects.filter(column=col).prefetch_related(
+                'tags', 
+                'scelles__traitements', 
+                'scelles__taches'
+            ).annotate(
                 pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
                 pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
@@ -124,7 +154,9 @@ def board(request):
         
     context = {
         'columns_data': columns_data,
-        'page_title': "Tableau de Bord"
+        'page_title': "Tableau de Bord",
+        'filter_traitements': Traitement.objects.filter(done=False).exclude(description="").values_list('description', flat=True).distinct().order_by('description'),
+        'filter_taches': Tache.objects.filter(done=False).exclude(description="").values_list('description', flat=True).distinct().order_by('description'),
     }
     return render(request, 'kanban/board.html', context)
 
@@ -296,6 +328,12 @@ def create_activity(request):
             description="",
             column=column
         )
+        
+        # Manually set counts/flags for template rendering
+        activity.pending_traitements = 0
+        activity.pending_taches = 0
+        activity.has_cta = False
+        activity.has_reparations = False
         
         # Render the card HTML
         card_html = render_to_string('kanban/card_snippet.html', {'activity': activity})
