@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404
+import logging
 from .models import KanbanColumn, Activity, Tag, Traitement, Tache, Scelle
 from django.db.models import Q, F, Count, Exists, OuterRef
 import json
@@ -10,6 +11,8 @@ from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
+
+logger = logging.getLogger('user_actions')
 
 def board(request):
     columns = KanbanColumn.objects.exclude(name='Archivé').order_by('order_index')
@@ -172,7 +175,8 @@ def update_column_order(request):
         with transaction.atomic():
             for index, col_id in enumerate(order):
                 KanbanColumn.objects.filter(id=col_id).update(order_index=index)
-                
+        
+        logger.info(f"User {request.user.username} updated column order.")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -194,6 +198,7 @@ def move_activity(request):
         activity.column = column
         activity.save()
         
+        logger.info(f"User {request.user.username} moved activity {activity_id} ('{activity.name}') to column {column.name}.")
         return JsonResponse({'status': 'success'})
     except Activity.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Activity not found'}, status=404)
@@ -232,6 +237,7 @@ def create_tag(request):
             return JsonResponse({'status': 'error', 'message': 'Missing name'}, status=400)
             
         tag, created = Tag.objects.get_or_create(name=name, defaults={'color': color})
+        logger.info(f"User {request.user.username} created tag '{name}' (created={created}).")
         return JsonResponse({'status': 'success', 'tag': {'id': tag.id, 'name': tag.name, 'color': tag.color}})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -258,6 +264,7 @@ def update_activity(request, activity_id):
             activity.description = data['description']
             
         activity.save()
+        logger.info(f"User {request.user.username} updated activity {activity_id} ('{activity.name}').")
         return JsonResponse({'status': 'success'})
     except Activity.DoesNotExist:
         return JsonResponse({'status': 'error', 'message': 'Activity not found'}, status=404)
@@ -284,6 +291,7 @@ def toggle_activity_tag(request, activity_id):
             activity.tags.add(tag)
             action = 'added'
             
+        logger.info(f"User {request.user.username} {action} tag {tag.name} from activity {activity_id} ('{activity.name}').")
         return JsonResponse({'status': 'success', 'action': action})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -306,6 +314,7 @@ def delete_activity(request, activity_id):
         # 3. Delete Activity
         activity.delete()
         
+        logger.info(f"User {request.user.username} deleted activity {activity_id} ('{activity.name}').")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         print(f"Error deleting activity: {e}")
@@ -338,6 +347,7 @@ def create_activity(request):
         # Render the card HTML
         card_html = render_to_string('kanban/card_snippet.html', {'activity': activity})
         
+        logger.info(f"User {request.user.username} created activity {activity.id} ('{activity.name}') in column {column.name}.")
         return JsonResponse({
             'status': 'success', 
             'activity_id': activity.id,
@@ -359,6 +369,7 @@ def add_scelle(request, activity_id):
             info=""
         )
         return JsonResponse({'status': 'success', 'scelle_id': scelle.id})
+        logger.info(f"User {request.user.username} added scelle {scelle.id} ('{scelle.name}') to activity {activity_id} ('{activity.name}').")
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
 
@@ -380,6 +391,7 @@ def update_scelle(request, scelle_id):
             scelle.reparations_validated = data['reparations_validated']
             
         scelle.save()
+        logger.info(f"User {request.user.username} updated scelle {scelle_id} ('{scelle.name}') in activity '{scelle.activity.name if scelle.activity else '?'}' .")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -389,7 +401,12 @@ def update_scelle(request, scelle_id):
 def delete_scelle(request, scelle_id):
     try:
         from .models import Scelle
-        Scelle.objects.filter(id=scelle_id).delete()
+        scelle = Scelle.objects.get(id=scelle_id)
+        scelle_name = scelle.name
+        activity_name = scelle.activity.name if scelle.activity else "?"
+        scelle.delete()
+        
+        logger.info(f"User {request.user.username} deleted scelle {scelle_id} ('{scelle_name}') from activity '{activity_name}'.")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -408,6 +425,7 @@ def add_traitement(request, scelle_id):
             return JsonResponse({'status': 'error', 'message': 'Missing description'}, status=400)
             
         t = Traitement.objects.create(scelle=scelle, description=description, done=False)
+        logger.info(f"User {request.user.username} added traitement {t.id} ('{description}') to scelle {scelle_id} ('{scelle.name}').")
         return JsonResponse({'status': 'success', 'traitement_id': t.id})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -425,6 +443,7 @@ def toggle_traitement(request, traitement_id):
         else:
             t.done_at = None
         t.save()
+        logger.info(f"User {request.user.username} toggled traitement {traitement_id} ('{t.description}') on scelle '{t.scelle.name if t.scelle else '?'}' (done={t.done}).")
         return JsonResponse({'status': 'success', 'done': t.done})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -434,7 +453,12 @@ def toggle_traitement(request, traitement_id):
 def delete_traitement(request, traitement_id):
     try:
         from .models import Traitement
-        Traitement.objects.filter(id=traitement_id).delete()
+        t = Traitement.objects.get(id=traitement_id)
+        desc = t.description
+        scelle_name = t.scelle.name if t.scelle else "?"
+        t.delete()
+        
+        logger.info(f"User {request.user.username} deleted traitement {traitement_id} ('{desc}') from scelle '{scelle_name}'.")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -451,6 +475,7 @@ def add_tache(request, scelle_id):
             return JsonResponse({'status': 'error', 'message': 'Missing description'}, status=400)
             
         t = Tache.objects.create(scelle=scelle, description=description, done=False)
+        logger.info(f"User {request.user.username} added tache {t.id} ('{description}') to scelle {scelle_id} ('{scelle.name}').")
         return JsonResponse({'status': 'success', 'tache_id': t.id})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -463,6 +488,7 @@ def toggle_tache(request, tache_id):
         t = Tache.objects.get(id=tache_id)
         t.done = not t.done
         t.save()
+        logger.info(f"User {request.user.username} toggled tache {tache_id} ('{t.description}') on scelle '{t.scelle.name if t.scelle else '?'}' (done={t.done}).")
         return JsonResponse({'status': 'success', 'done': t.done})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -472,7 +498,12 @@ def toggle_tache(request, tache_id):
 def delete_tache(request, tache_id):
     try:
         from .models import Tache
-        Tache.objects.filter(id=tache_id).delete()
+        t = Tache.objects.get(id=tache_id)
+        desc = t.description
+        scelle_name = t.scelle.name if t.scelle else "?"
+        t.delete()
+        
+        logger.info(f"User {request.user.username} deleted tache {tache_id} ('{desc}') from scelle '{scelle_name}'.")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -603,6 +634,8 @@ def archive_activity(request, activity_id):
         archived_col, _ = KanbanColumn.objects.get_or_create(name='Archivé')
         activity.column = archived_col
         activity.save()
+        activity.save()
+        logger.info(f"User {request.user.username} archived activity {activity_id} ('{activity.name}').")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
@@ -616,6 +649,8 @@ def unarchive_activity(request, activity_id):
         target_col = KanbanColumn.objects.get(name='En attente')
         activity.column = target_col
         activity.save()
+        activity.save()
+        logger.info(f"User {request.user.username} unarchived activity {activity_id} ('{activity.name}').")
         return JsonResponse({'status': 'success'})
     except Exception as e:
         # Fallback if "En attente" doesn't exist? (Unlikely)

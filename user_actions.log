@@ -1,0 +1,29 @@
+2026-01-13 20:12:37 [INFO] User admin created activity 20 in column En cours.
+2026-01-13 20:12:43 [INFO] User admin updated activity 20.
+2026-01-13 20:12:46 [INFO] User admin updated activity 20.
+2026-01-13 20:12:53 [INFO] User admin added traitement 43 to scelle 26.
+2026-01-13 20:12:58 [INFO] User admin added tache 42 to scelle 26.
+2026-01-13 20:14:23 [INFO] User admin deleted activity 20.
+2026-01-13 20:20:30 [INFO] User admin created activity 20 ('Nouvelle Activité') in column En cours.
+2026-01-13 20:20:37 [INFO] User admin updated activity 20 ('Test log 2').
+2026-01-13 20:20:39 [INFO] User admin updated activity 20 ('Test log 2').
+2026-01-13 20:20:45 [INFO] User admin updated activity 20 ('Test log 2').
+2026-01-13 20:20:46 [INFO] User admin updated activity 20 ('Test log 2').
+2026-01-13 20:20:54 [INFO] User admin updated scelle 26 ('SC Log') in activity 'Test log 2' .
+2026-01-13 20:21:02 [INFO] User admin added traitement 44 ('IMAGE') to scelle 26 ('SC Log').
+2026-01-13 20:21:06 [INFO] User admin deleted traitement 44 ('IMAGE') from scelle 'SC Log'.
+2026-01-13 20:21:13 [INFO] User admin added tache 43 ('Photos') to scelle 26 ('SC Log').
+2026-01-13 20:21:16 [INFO] User admin deleted tache 42 ('Photos') from scelle 'SC Log'.
+2026-01-13 20:21:20 [INFO] User admin added tache 45 ('ENCASE') to scelle 26 ('SC Log').
+2026-01-13 20:21:34 [INFO] User admin deleted tache 45 ('ENCASE') from scelle 'SC Log'.
+2026-01-13 20:22:29 [INFO] User admin added tache 46 ('Pending Task') to scelle 26 ('SC Log').
+2026-01-13 20:24:31 [INFO] User admin deleted activity 20 ('Test log 2').
+2026-01-13 20:24:32 [INFO] User admin created activity 20 ('Nouvelle Activité') in column En cours.
+2026-01-13 20:24:40 [INFO] User admin updated activity 20 ('Test log 3').
+2026-01-13 20:24:42 [INFO] User admin updated scelle 26 ('Nouveau Scellé') in activity 'Test log 3' .
+2026-01-13 20:24:43 [INFO] User admin updated scelle 26 ('Nouveau Scellé') in activity 'Test log 3' .
+2026-01-13 20:24:46 [INFO] User admin added traitement 43 ('IMAGE') to scelle 26 ('Nouveau Scellé').
+2026-01-13 20:24:50 [INFO] User admin added tache 42 ('Encase') to scelle 26 ('Nouveau Scellé').
+2026-01-13 20:24:56 [INFO] User admin added tache 43 ('Photos') to scelle 26 ('Nouveau Scellé').
+2026-01-13 20:24:59 [INFO] User admin deleted tache 42 ('Encase') from scelle 'Nouveau Scellé'.
+2026-01-13 20:25:27 [INFO] User admin deleted activity 20 ('Test log 3').
