@@ -1,0 +1,143 @@
+{% extends 'kanban/base.html' %}
+
+{% block content %}
+<div class="container-fluid" style="padding: 2rem;">
+
+    <h1 style="margin-bottom: 2rem; color: #1e293b;">
+        Synthèse <small style="font-size: 0.6em; color: #64748b;">Vue d'ensemble</small>
+    </h1>
+
+    <div class="row" style="display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 3rem;">
+
+        <!-- Card: Remaining -->
+        <div class="card summary-card big-card" style="flex: 2; min-width: 300px; background: #3b82f6; color: white;">
+            <div class="card-body" style="padding: 2rem;">
+                <h3 class="card-title" style="font-size: 1.2rem; opacity: 0.9;">Affaires en cours (Réel)</h3>
+                <p class="card-text" style="font-size: 4rem; font-weight: 700; margin: 0.5rem 0;">
+                    {{ remaining_count }}
+                </p>
+                <p style="opacity: 0.8; font-size: 0.9rem;">
+                    (Total - Terminé - CTA - Réparations - En Attente)
+                </p>
+            </div>
+        </div>
+
+        <!-- Side Cards -->
+        <div style="flex: 3; display: flex; gap: 1rem; flex-wrap: wrap;">
+
+            <!-- CTA -->
+            <div class="card summary-card"
+                style="flex: 1; min-width: 150px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                <h4 style="color: #64748b; font-size: 0.9rem; font-weight: 600;">CTA (Validé)</h4>
+                <p style="font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0;">{{ cta_count }}</p>
+            </div>
+
+            <!-- Réparations -->
+            <div class="card summary-card"
+                style="flex: 1; min-width: 150px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                <h4 style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Réparations</h4>
+                <p style="font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0;">{{ reparation_count }}
+                </p>
+            </div>
+
+            <!-- En Attente -->
+            <div class="card summary-card"
+                style="flex: 1; min-width: 150px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                <h4 style="color: #64748b; font-size: 0.9rem; font-weight: 600;">En Attente</h4>
+                <p style="font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0;">{{ attente_count }}
+                </p>
+            </div>
+
+            <!-- Terminé -->
+            <div class="card summary-card"
+                style="flex: 1; min-width: 150px; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem;">
+                <h4 style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Terminé</h4>
+                <p style="font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0;">{{ termine_count }}
+                </p>
+            </div>
+
+            <!-- Total -->
+            <div class="card summary-card"
+                style="flex: 1; min-width: 150px; background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 12px; padding: 1.5rem;">
+                <h4 style="color: #64748b; font-size: 0.9rem; font-weight: 600;">Total (Non-Archivé)</h4>
+                <p style="font-size: 2.5rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0;">{{ total_count }}</p>
+            </div>
+        </div>
+    </div>
+
+    <h2 style="font-size: 1.5rem; margin-bottom: 1rem; color: #334155;">
+        Détail des Affaires en cours ({{ remaining_count }})
+    </h2>
+
+    <div style="background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f8fafc; border-bottom: 2px solid #e2e8f0;">
+                <tr>
+                    <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Date</th>
+                    <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Activité</th>
+                    <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Scellés / Info</th>
+                    <th style="text-align: left; padding: 1rem; color: #64748b; font-weight: 600;">Colonne</th>
+                    <th style="text-align: right; padding: 1rem; color: #64748b; font-weight: 600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for activity in remaining_activities %}
+                <tr style="border-bottom: 1px solid #f1f5f9;">
+                    <td style="padding: 1rem; color: #64748b;">{{ activity.date|date:"d/m/Y" }}</td>
+                    <td style="padding: 1rem;">
+                        <a href="{% url 'kanban:board' %}?highlight={{ activity.id }}"
+                            style="text-decoration: none; color: inherit;">
+                            <strong style="color: #0f172a; display: block;">
+                                {{ activity.name|default:"Sans nom" }}
+                            </strong>
+                            <span style="font-size: 0.85em; color: #64748b;">
+                                {{ activity.description|truncatechars:100 }}
+                            </span>
+                        </a>
+                    </td>
+                    <td style="padding: 1rem;">
+                        {% for scelle in activity.scelles.all %}
+                        <div style="font-size: 0.9em; margin-bottom: 0.2rem; color: #334155;">
+                            <i class="fa-solid fa-box" style="color: #64748b;"></i> {{ scelle.name }}
+                        </div>
+                        {% endfor %}
+                    </td>
+                    <td style="padding: 1rem;">
+                        <span
+                            style="background: #e0f2fe; color: #0369a1; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.85em; font-weight: 600;">
+                            {{ activity.column.name }}
+                        </span>
+                    </td>
+                    <td style="padding: 1rem; text-align: right;">
+                        <a href="{% url 'kanban:activity_detail' activity.id %}" class="btn-icon" title="Détails"
+                            style="color: #3b82f6;">
+                            <i class="fa-solid fa-eye"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="padding: 3rem; text-align: center; color: #94a3b8;">
+                        <i class="fa-regular fa-calendar-check"
+                            style="font-size: 2rem; margin-bottom: 1rem; display: block;"></i>
+                        Aucune activité en cours à traiter !
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+
+<style>
+    .summary-card {
+        box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        transition: transform 0.2s;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}

@@ -163,6 +163,53 @@ def board(request):
     }
     return render(request, 'kanban/board.html', context)
 
+def synthese(request):
+    # Base: Exclude Archived
+    base_qs = Activity.objects.exclude(column__name='Archivé')
+    
+    total_count = base_qs.count()
+    
+    # 1. Terminé (Column 'Terminé')
+    termine_qs = base_qs.filter(column__name='Terminé')
+    termine_count = termine_qs.count()
+    
+    # Working set (Non-Terminé) for further subtractions
+    non_termine_qs = base_qs.exclude(column__name='Terminé')
+    
+    # 2. CTA Validated (Active)
+    cta_qs = non_termine_qs.filter(scelles__cta_validated=True).distinct()
+    cta_count = cta_qs.count()
+    
+    # 3. Réparations Validated (Active)
+    rep_qs = non_termine_qs.filter(scelles__reparations_validated=True).distinct()
+    reparation_count = rep_qs.count()
+    
+    # 4. En Attente (Physical Column) (Active)
+    attente_qs = non_termine_qs.filter(column__name='En attente')
+    attente_count = attente_qs.count()
+    
+    # 5. Remaining / "En cours réel"
+    # Calculation: Total Active - (CTA U Rep U EnAttente)
+    remaining_qs = non_termine_qs.exclude(
+        Q(scelles__cta_validated=True) |
+        Q(scelles__reparations_validated=True) |
+        Q(column__name='En attente')
+    ).distinct()
+    
+    remaining_count = remaining_qs.count()
+    
+    context = {
+        'page_title': "Synthèse des Activités",
+        'total_count': total_count,
+        'termine_count': termine_count,
+        'cta_count': cta_count,
+        'reparation_count': reparation_count,
+        'attente_count': attente_count,
+        'remaining_count': remaining_count,
+        'remaining_activities': remaining_qs.prefetch_related('tags', 'scelles').order_by('date')
+    }
+    return render(request, 'kanban/synthese.html', context)
+
 # ... (API endpoints remain unchanged until get_activity_columns) ...
 
 @require_POST

@@ -5,6 +5,7 @@ app_name = 'kanban'
 
 urlpatterns = [
     path('', views.board, name='board'),
+    path('synthese/', views.synthese, name='synthese'),
     path('admin-export-form/', views.admin_export_form_view, name='admin_export_form'),
     path('admin-export/', views.admin_export_report, name='admin_export'),
     path('reorder-columns/', views.update_column_order, name='update_column_order'),
