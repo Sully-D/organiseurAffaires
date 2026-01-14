@@ -29,3 +29,5 @@
 2026-01-13 20:25:27 [INFO] User admin deleted activity 20 ('Test log 3').
 2026-01-14 22:13:34 [INFO] User admin added tag #Important from activity 7 ('Test important').
 2026-01-14 22:13:43 [INFO] User admin updated scelle 11 ('un') in activity 'Test important' .
+2026-01-14 22:41:53 [INFO] User admin moved activity 7 ('Test important') to column Terminé.
+2026-01-14 22:41:57 [INFO] User admin moved activity 7 ('Test important') to column En cours.
