@@ -1,4 +1,6 @@
-<div class="modal-header">
+import os
+
+content = """<div class="modal-header">
     <div class="modal-title-group" style="flex: 1; margin-right: 1rem;">
         <input type="text" id="activityName" value="{{ activity.name }}" class="edit-input title-input"
             onblur="saveActivityField('name', this.value)">
@@ -11,7 +13,7 @@
         </div>
     </div>
     <div style="display: flex; gap: 0.5rem; align-items: flex-start;">
-        <button class="modal-close" onclick="archiveCurrentActivity('{{ activity.id }}')" title="Archiver ce dossier"
+        <button class="modal-close" onclick="archiveCurrentActivity({{ activity.id }})" title="Archiver ce dossier"
             style="margin-top: -2px;">
             <i class="fa-solid fa-box-archive"></i>
         </button>
@@ -25,14 +27,12 @@
                 title="Gérer les tags"><i class="fa-solid fa-plus"></i></button>{% endif %}</h3>
         <div class="tags" id="activityTags">
             {% for tag in activity.tags.all %}
-            {% with tag_color=tag.color|default:'#cccccc' %}
-            <span class="tag" style="--tag-bg: {{ tag_color }}; background-color: var(--tag-bg);">
+            <span class="tag" style="background-color: {{ tag.color|default:'#cccccc' }};">
                 {{ tag.name }}
                 {% if user.is_superuser %}
-                <span class="remove-tag" onclick="toggleTag('{{ tag.id }}')" title="Retirer">&times;</span>
+                <span class="remove-tag" onclick="toggleTag({{ tag.id }})" title="Retirer">&times;</span>
                 {% endif %}
             </span>
-            {% endwith %}
             {% endfor %}
         </div>
         <!-- Simple Tag Selector hidden by default -->
@@ -47,9 +47,8 @@
             <p class="text-sm text-secondary" style="margin-top:0.5rem;">Sélectionner un tag existant :</p>
             <div class="tags-options">
                 {% for t in all_tags %}
-                <span class="tag option"
-                    style="--tag-bg: {{ t.color }}; background-color: var(--tag-bg); cursor: pointer; opacity: 0.7;"
-                    onclick="toggleTag('{{ t.id }}')">
+                <span class="tag option" style="background-color: {{ t.color }}; cursor: pointer; opacity: 0.7;"
+                    onclick="toggleTag({{ t.id }})">
                     {{ t.name }}
                 </span>
                 {% endfor %}
@@ -76,52 +75,51 @@
             <div class="scelle-item" id="scelle-{{ scelle.id }}">
                 <div class="scelle-header-edit">
                     <input type="text" value="{{ scelle.name }}" class="edit-input scelle-name"
-                        onblur="updateScelle('{{ scelle.id }}', 'name', this.value)" {% if not user.is_superuser %}disabled{% endif %}>
-                    {% if user.is_superuser %}<button class="btn-icon-danger"
-                        onclick="deleteScelle('{{ scelle.id }}')"><i class="fa-solid fa-trash"></i></button>{% endif %}
+                        onblur="updateScelle({{ scelle.id }}, 'name', this.value)" {% if not user.is_superuser %}disabled{% endif %}>
+                    {% if user.is_superuser %}<button class="btn-icon-danger" onclick="deleteScelle({{ scelle.id }})"><i
+                            class="fa-solid fa-trash"></i></button>{% endif %}
                 </div>
 
                 <div class="scelle-properties">
                     <label class="checkbox-label">
                         <input type="checkbox" {% if scelle.cta_validated %}checked{% endif %}
-                            onchange="updateScelle('{{ scelle.id }}', 'cta_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> CTA
+                            onchange="updateScelle({{ scelle.id }}, 'cta_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> CTA
                     </label>
                     <label class="checkbox-label">
                         <input type="checkbox" {% if scelle.reparations_validated %}checked{% endif %}
-                            onchange="updateScelle('{{ scelle.id }}', 'reparations_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> Rép.
+                            onchange="updateScelle({{ scelle.id }}, 'reparations_validated', this.checked)" {% if not user.is_superuser %}disabled{% endif %}> Rép.
                     </label>
                 </div>
 
                 <textarea placeholder="Infos supplémentaires..." class="edit-input scelle-info" rows="2"
-                    onblur="updateScelle('{{ scelle.id }}', 'info', this.value)" {% if not user.is_superuser %}disabled{% endif %}>{{ scelle.info }}</textarea>
+                    onblur="updateScelle({{ scelle.id }}, 'info', this.value)" {% if not user.is_superuser %}disabled{% endif %}>{{ scelle.info }}</textarea>
 
                 <!-- Traitements -->
                 <div class="sub-section">
                     <h5>
                         Traitements
                         {% if user.is_superuser %}<button class="btn-icon-sm"
-                            onclick="showAddInput('traitement', '{{ scelle.id }}')" title="Ajouter un traitement"><i
+                            onclick="showAddInput('traitement', {{ scelle.id }})" title="Ajouter un traitement"><i
                                 class="fa-solid fa-plus"></i></button>{% endif %}
                     </h5>
 
                     <div id="add-traitement-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
                         <input type="text" id="new-traitement-desc-{{ scelle.id }}" placeholder="Description..."
                             class="edit-input" list="traitement-suggestions"
-                            onkeydown="if(event.key==='Enter') addTraitement('{{ scelle.id }}')">
-                        <button class="btn-icon-sm" onclick="addTraitement('{{ scelle.id }}')"><i
+                            onkeydown="if(event.key==='Enter') addTraitement({{ scelle.id }})">
+                        <button class="btn-icon-sm" onclick="addTraitement({{ scelle.id }})"><i
                                 class="fa-solid fa-check"></i></button>
                     </div>
 
                     <ul class="task-list" id="traitements-list-{{ scelle.id }}">
                         {% for t in scelle.traitements.all %}
                         <li id="traitement-{{ t.id }}" class="{% if t.done %}done{% endif %}">
-                            <i {% if user.is_superuser %}onclick="toggleTraitement('{{ t.id }}')"
-                                style="cursor: pointer;" {% endif %}
+                            <i {% if user.is_superuser %}onclick="toggleTraitement({{ t.id }})" style="cursor: pointer;"
+                                {% endif %}
                                 class="fa-{% if t.done %}solid fa-check-square{% else %}regular fa-square{% endif %}"></i>
                             <span style="flex: 1;">{{ t.description }}</span>
                             {% if t.done_at %}<span class="done-date">({{ t.done_at|date:"d/m" }})</span>{% endif %}
-                            {% if user.is_superuser %}<button class="btn-icon-danger-sm"
-                                onclick="deleteTraitement('{{ t.id }}')"><i class="fa-solid fa-trash"></i></button>{% endif %}
+                            {% if user.is_superuser %}<button class="btn-icon-danger-sm" onclick="deleteTraitement({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -132,26 +130,26 @@
                     <h5>
                         Tâches
                         {% if user.is_superuser %}<button class="btn-icon-sm"
-                            onclick="showAddInput('tache', '{{ scelle.id }}')" title="Ajouter une tâche"><i
+                            onclick="showAddInput('tache', {{ scelle.id }})" title="Ajouter une tâche"><i
                                 class="fa-solid fa-plus"></i></button>{% endif %}
                     </h5>
 
                     <div id="add-tache-input-{{ scelle.id }}" class="add-item-input" style="display: none;">
                         <input type="text" id="new-tache-desc-{{ scelle.id }}" placeholder="Description..."
                             class="edit-input" list="tache-suggestions"
-                            onkeydown="if(event.key==='Enter') addTache('{{ scelle.id }}')">
-                        <button class="btn-icon-sm" onclick="addTache('{{ scelle.id }}')"><i
+                            onkeydown="if(event.key==='Enter') addTache({{ scelle.id }})">
+                        <button class="btn-icon-sm" onclick="addTache({{ scelle.id }})"><i
                                 class="fa-solid fa-check"></i></button>
                     </div>
 
                     <ul class="task-list" id="taches-list-{{ scelle.id }}">
                         {% for t in scelle.taches.all %}
                         <li id="tache-{{ t.id }}" class="{% if t.done %}done{% endif %}">
-                            <i {% if user.is_superuser %}onclick="toggleTache('{{ t.id }}')" style="cursor: pointer;" {% endif %}
+                            <i {% if user.is_superuser %}onclick="toggleTache({{ t.id }})" style="cursor: pointer;" {% endif %}
                                 class="fa-{% if t.done %}solid fa-check-circle{% else %}regular fa-circle{% endif %}"></i>
                             <span style="flex: 1;">{{ t.description }}</span>
                             {% if user.is_superuser %}<button class="btn-icon-danger-sm"
-                                onclick="deleteTache('{{ t.id }}')"><i class="fa-solid fa-trash"></i></button>{% endif %}
+                                onclick="deleteTache({{ t.id }})"><i class="fa-solid fa-trash"></i></button>{% endif %}
                         </li>
                         {% endfor %}
                     </ul>
@@ -166,12 +164,12 @@
 </div>
 
 <script>
-    var activityId = '{{ activity.id }}';
+    var activityId = {{ activity.id }};
 
     function archiveCurrentActivity(id) {
         if (!confirm("Archiver ce dossier ? Il sera déplacé dans la vue 'Archivé'.")) return;
 
-        fetch(`/api/activity/${id}/archive/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -182,7 +180,7 @@
                 if (data.status === 'success') {
                     closeModal();
                     // Find and remove card from board
-                    const card = document.querySelector(`.activity-card[data-id="${id}"]`);
+                    const card = document.querySelector();
                     if (card) {
                         card.remove();
                         // Ideally check if column count needs update, but simple remove is visual enough vs full refresh
@@ -202,7 +200,7 @@
         let data = {};
         data[field] = value;
 
-        fetch(`/api/activity/${activityId}/update/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -248,7 +246,7 @@
     }
 
     function toggleTag(tagId) {
-        fetch(`/api/activity/${activityId}/toggle-tag/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -260,7 +258,7 @@
                 if (data.status === 'success') {
                     // Reload modal content to refresh list (easiest way to sync UI)
                     // Or manually manipulate DOM. Reloading partial is safer for state.
-                    fetch(`/activity/${activityId}/`)
+                    fetch()
                         .then(r => r.text())
                         .then(html => {
                             document.getElementById('modalContent').innerHTML = html;
@@ -279,7 +277,7 @@
     }
 
     function addScelle() {
-        fetch(`/api/activity/${activityId}/add-scelle/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -289,7 +287,7 @@
             .then(data => {
                 if (data.status === 'success') {
                     // Reload modal
-                    fetch(`/activity/${activityId}/`)
+                    fetch()
                         .then(r => r.text())
                         .then(html => {
                             document.getElementById('modalContent').innerHTML = html;
@@ -310,7 +308,7 @@
         let data = {};
         data[field] = value;
 
-        fetch(`/api/scelle/${scelleId}/update/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -330,7 +328,7 @@
     function deleteScelle(scelleId) {
         if (!confirm('Supprimer ce scellé ?')) return;
 
-        fetch(`/api/scelle/${scelleId}/delete/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -339,26 +337,26 @@
         }).then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    document.getElementById(`scelle-${scelleId}`).remove();
+                    document.getElementById().remove();
                 }
             });
     }
 
     // Traitements & Tâches JS
     function showAddInput(type, scelleId) {
-        const el = document.getElementById(`add-${type}-input-${scelleId}`);
+        const el = document.getElementById();
         el.style.display = el.style.display === 'none' ? 'flex' : 'none';
         if (el.style.display === 'flex') {
-            document.getElementById(`new-${type}-desc-${scelleId}`).focus();
+            document.getElementById().focus();
         }
     }
 
     function addTraitement(scelleId) {
-        const input = document.getElementById(`new-traitement-desc-${scelleId}`);
+        const input = document.getElementById();
         const description = input.value.trim();
         if (!description) return;
 
-        fetch(`/api/scelle/${scelleId}/add-traitement/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -374,7 +372,7 @@
     }
 
     function toggleTraitement(id) {
-        fetch(`/api/traitement/${id}/toggle/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -383,7 +381,7 @@
         }).then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const li = document.getElementById(`traitement-${id}`);
+                    const li = document.getElementById();
                     const icon = li.querySelector('i');
                     if (data.done) {
                         li.classList.add('done');
@@ -401,7 +399,7 @@
 
     function deleteTraitement(id) {
         if (!confirm('Supprimer ce traitement ?')) return;
-        fetch(`/api/traitement/${id}/delete/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -410,18 +408,18 @@
         }).then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    document.getElementById(`traitement-${id}`).remove();
+                    document.getElementById().remove();
                     if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
                 }
             });
     }
 
     function addTache(scelleId) {
-        const input = document.getElementById(`new-tache-desc-${scelleId}`);
+        const input = document.getElementById();
         const description = input.value.trim();
         if (!description) return;
 
-        fetch(`/api/scelle/${scelleId}/add-tache/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -437,7 +435,7 @@
     }
 
     function toggleTache(id) {
-        fetch(`/api/tache/${id}/toggle/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -446,7 +444,7 @@
         }).then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    const li = document.getElementById(`tache-${id}`);
+                    const li = document.getElementById();
                     const icon = li.querySelector('i');
                     if (data.done) {
                         li.classList.add('done');
@@ -462,7 +460,7 @@
 
     function deleteTache(id) {
         if (!confirm('Supprimer cette tâche ?')) return;
-        fetch(`/api/tache/${id}/delete/`, {
+        fetch(, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -471,7 +469,7 @@
         }).then(res => res.json())
             .then(data => {
                 if (data.status === 'success') {
-                    document.getElementById(`tache-${id}`).remove();
+                    document.getElementById().remove();
                     if (window.parent && window.parent.refreshActivityColumns) window.parent.refreshActivityColumns(activityId);
                 }
             });
@@ -482,7 +480,7 @@
         const modalBody = document.querySelector('#modalContent .modal-body');
         const scrollTop = modalBody ? modalBody.scrollTop : 0;
 
-        fetch(`/activity/${activityId}/`)
+        fetch()
             .then(r => r.text())
             .then(html => {
                 document.getElementById('modalContent').innerHTML = html;
@@ -565,7 +563,6 @@
     .edit-input:focus {
         outline: none;
         border-color: var(--accent);
-        background: rgba(255, 255, 255, 0.1);
         background: rgba(255, 255, 255, 0.1);
     }
 
@@ -685,3 +682,10 @@
         color: var(--text-secondary);
     }
 </style>
+"""
+
+path = 'web/kanban/templates/kanban/activity_detail.html'
+with open(path, 'w') as f:
+    f.write(content)
+
+print(f"Forcefully overwrote {path}")

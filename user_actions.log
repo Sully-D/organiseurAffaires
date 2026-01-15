@@ -31,3 +31,27 @@
 2026-01-14 22:13:43 [INFO] User admin updated scelle 11 ('un') in activity 'Test important' .
 2026-01-14 22:41:53 [INFO] User admin moved activity 7 ('Test important') to column Terminé.
 2026-01-14 22:41:57 [INFO] User admin moved activity 7 ('Test important') to column En cours.
+2026-01-15 05:39:25 [INFO] User admin created activity 20 ('Nouvelle Activité') in column En cours.
+2026-01-15 06:43:19 [INFO] User admin added tag #Infos from activity 7 ('Test important').
+2026-01-15 06:43:21 [INFO] User admin removed tag #Infos from activity 7 ('Test important').
+2026-01-15 06:43:30 [INFO] User admin updated scelle 26 ('Nouveau Scellé 2') in activity 'Test important' .
+2026-01-15 06:43:30 [INFO] User admin updated scelle 26 ('Nouveau Scellé 2') in activity 'Test important' .
+2026-01-15 06:43:30 [INFO] User admin updated scelle 26 ('Nouveau Scellé 2') in activity 'Test important' .
+2026-01-15 06:43:35 [INFO] User admin updated scelle 26 ('Nouveau Scellé 2') in activity 'Test important' .
+2026-01-15 06:43:40 [INFO] User admin added traitement 43 ('Axiom') to scelle 26 ('Nouveau Scellé 2').
+2026-01-15 06:43:46 [INFO] User admin added tache 42 ('Photos') to scelle 26 ('Nouveau Scellé 2').
+2026-01-15 06:43:54 [INFO] User admin updated activity 7 ('Test important').
+2026-01-15 06:43:56 [INFO] User admin updated activity 7 ('Test important').
+2026-01-15 06:44:00 [INFO] User admin updated activity 7 ('Test important').
+2026-01-15 06:44:05 [INFO] User admin updated activity 7 ('Test important').
+2026-01-15 06:45:10 [INFO] User admin created activity 21 ('Nouvelle Activité') in column En cours.
+2026-01-15 06:45:15 [INFO] User admin updated activity 21 ('Nouvelle Activité 3').
+2026-01-15 06:45:17 [INFO] User admin updated activity 21 ('Nouvelle Activité 3').
+2026-01-15 06:45:19 [INFO] User admin added tag #test from activity 21 ('Nouvelle Activité 3').
+2026-01-15 06:45:23 [INFO] User admin updated activity 21 ('Nouvelle Activité 3').
+2026-01-15 06:45:26 [INFO] User admin updated scelle 27 ('Nouveau Scellé') in activity 'Nouvelle Activité 3' .
+2026-01-15 06:45:29 [INFO] User admin added traitement 44 ('IMAGE') to scelle 27 ('Nouveau Scellé').
+2026-01-15 06:45:34 [INFO] User admin added tache 43 ('ENCASE') to scelle 27 ('Nouveau Scellé').
+2026-01-15 06:45:42 [INFO] User admin moved activity 21 ('Nouvelle Activité 3') to column Terminé.
+2026-01-15 06:45:46 [INFO] User admin moved activity 21 ('Nouvelle Activité 3') to column En cours.
+2026-01-15 06:45:53 [INFO] User admin updated activity 21 ('Nouvelle Activité 3').

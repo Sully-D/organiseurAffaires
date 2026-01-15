@@ -27,6 +27,23 @@
                             <div class="sort-item" onclick="sortColumn({{ col_data.column.id }}, 'name', 'desc')">
                                 <i class="fa-solid fa-arrow-up-a-z"></i> Nom (Z-A)
                             </div>
+                            <!-- New Sorts -->
+                            <div class="sort-item"
+                                onclick="sortColumn({{ col_data.column.id }}, 'pending-traitements', 'asc')">
+                                <i class="fa-solid fa-clipboard-check"></i> Traitements (Croissant)
+                            </div>
+                            <div class="sort-item"
+                                onclick="sortColumn({{ col_data.column.id }}, 'pending-traitements', 'desc')">
+                                <i class="fa-solid fa-clipboard-check"></i> Traitements (Décroissant)
+                            </div>
+                            <div class="sort-item"
+                                onclick="sortColumn({{ col_data.column.id }}, 'pending-taches', 'asc')">
+                                <i class="fa-solid fa-list-check"></i> Tâches (Croissant)
+                            </div>
+                            <div class="sort-item"
+                                onclick="sortColumn({{ col_data.column.id }}, 'pending-taches', 'desc')">
+                                <i class="fa-solid fa-list-check"></i> Tâches (Décroissant)
+                            </div>
                         </div>
                     </div>
                     {% if user.is_superuser %}
@@ -39,7 +56,7 @@
         </div>
         <div class="column-body">
             {% for activity in col_data.activities %}
-            {% if col_data.column.name == 'En attente' or col_data.column.name == 'Terminé' or col_data.column.name ==             'CTA' %}
+            {% if col_data.column.name == 'En attente' or col_data.column.name == 'Terminé' or col_data.column.name == 'CTA' %}
             {% include "kanban/card_snippet.html" with activity=activity hide_urgency=True %}
             {% else %}
             {% include "kanban/card_snippet.html" with activity=activity %}
@@ -102,13 +119,27 @@
         const columnBody = document.querySelector(`.kanban-column[data-id="${columnId}"] .column-body`);
         const cards = Array.from(columnBody.querySelectorAll('.activity-card'));
 
-        cards.sort((a, b) => {
-            let valA = a.getAttribute(`data-${criteria}`).toLowerCase();
-            let valB = b.getAttribute(`data-${criteria}`).toLowerCase();
+        // Determine if we should sort numerically
+        const isNumeric = criteria === 'pending-traitements' || criteria === 'pending-taches';
 
-            if (valA < valB) return direction === 'asc' ? -1 : 1;
-            if (valA > valB) return direction === 'asc' ? 1 : -1;
-            return 0;
+        cards.sort((a, b) => {
+            let valA = a.getAttribute(`data-${criteria}`);
+            let valB = b.getAttribute(`data-${criteria}`);
+
+            if (isNumeric) {
+                const numA = parseFloat(valA) || 0;
+                const numB = parseFloat(valB) || 0;
+                if (numA < numB) return direction === 'asc' ? -1 : 1;
+                if (numA > numB) return direction === 'asc' ? 1 : -1;
+                return 0;
+            } else {
+                // String sort (Date, Name)
+                valA = (valA || '').toLowerCase();
+                valB = (valB || '').toLowerCase();
+                if (valA < valB) return direction === 'asc' ? -1 : 1;
+                if (valA > valB) return direction === 'asc' ? 1 : -1;
+                return 0;
+            }
         });
 
         // Re-append to sort
