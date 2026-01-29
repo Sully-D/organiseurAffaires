@@ -1,7 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 import logging
 from .models import KanbanColumn, Activity, Tag, Traitement, Tache, Scelle
-from django.db.models import Q, F, Count, Exists, OuterRef
+from django.db.models import Q, F, Count, Exists, OuterRef, Subquery, Value, IntegerField
+from django.db.models.functions import Coalesce
 import json
 from datetime import date, timedelta
 import json
@@ -16,6 +17,21 @@ logger = logging.getLogger('user_actions')
 
 def board(request):
     columns = KanbanColumn.objects.exclude(name='Archivé').order_by('order_index')
+    
+    # Create reusable subqueries for accurate pending counts
+    pending_traitements_subquery = Traitement.objects.filter(
+        scelle__activity=OuterRef('pk'),
+        done=False
+    ).values('scelle__activity').annotate(
+        total=Count('id')
+    ).values('total')
+    
+    pending_taches_subquery = Tache.objects.filter(
+        scelle__activity=OuterRef('pk'),
+        done=False
+    ).values('scelle__activity').annotate(
+        total=Count('id')
+    ).values('total')
     
     # Organize activities by column
     columns_data = []
@@ -36,8 +52,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -56,8 +78,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -71,8 +99,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -86,8 +120,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -105,8 +145,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -132,8 +178,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).distinct().annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -144,8 +196,14 @@ def board(request):
                 'scelles__traitements', 
                 'scelles__taches'
             ).annotate(
-                pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-                pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+                pending_traitements=Coalesce(
+                    Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
+                pending_taches=Coalesce(
+                    Subquery(pending_taches_subquery, output_field=IntegerField()),
+                    Value(0)
+                ),
                 has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
                 has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
             ).order_by('date')
@@ -559,9 +617,30 @@ def delete_tache(request, tache_id):
 @require_POST
 def get_activity_columns(request, activity_id):
     try:
+        # Create subqueries for accurate counts
+        pending_traitements_subquery = Traitement.objects.filter(
+            scelle__activity=OuterRef('pk'),
+            done=False
+        ).values('scelle__activity').annotate(
+            total=Count('id')
+        ).values('total')
+        
+        pending_taches_subquery = Tache.objects.filter(
+            scelle__activity=OuterRef('pk'),
+            done=False
+        ).values('scelle__activity').annotate(
+            total=Count('id')
+        ).values('total')
+        
         activity = Activity.objects.prefetch_related('tags', 'scelles').annotate(
-            pending_traitements=Count('scelles__traitements', filter=Q(scelles__traitements__done=False)),
-            pending_taches=Count('scelles__taches', filter=Q(scelles__taches__done=False)),
+            pending_traitements=Coalesce(
+                Subquery(pending_traitements_subquery, output_field=IntegerField()),
+                Value(0)
+            ),
+            pending_taches=Coalesce(
+                Subquery(pending_taches_subquery, output_field=IntegerField()),
+                Value(0)
+            ),
             has_cta=Exists(Scelle.objects.filter(activity=OuterRef('pk'), cta_validated=True)),
             has_reparations=Exists(Scelle.objects.filter(activity=OuterRef('pk'), reparations_validated=True))
         ).get(id=activity_id)
