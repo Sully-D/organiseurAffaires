@@ -82,3 +82,10 @@
 2026-01-29 20:40:33 [INFO] User admin updated activity 23 ('Encore un test').
 2026-01-29 20:40:38 [INFO] User admin added traitement 50 ('2') to scelle 29 ('Nouveau Scellé').
 2026-01-29 20:40:42 [INFO] User admin added tache 54 ('3') to scelle 29 ('Nouveau Scellé').
+2026-01-29 21:27:53 [INFO] User admin created activity 24 ('Nouvelle Activité') in column En cours.
+2026-01-29 21:28:03 [INFO] User admin updated activity 24 ('Nouveau test').
+2026-01-29 21:28:08 [INFO] User admin updated activity 24 ('Nouveau test').
+2026-01-29 21:28:21 [INFO] User admin added traitement 51 ('IMAGE') to scelle 30 ('Nouveau Scellé').
+2026-01-29 21:28:24 [INFO] User admin added tache 55 ('ENCASE') to scelle 30 ('Nouveau Scellé').
+2026-01-29 21:28:30 [INFO] User admin added tache 56 ('Photos') to scelle 30 ('Nouveau Scellé').
+2026-01-29 21:28:37 [INFO] User admin updated scelle 31 ('Nouveau Scellé 2') in activity 'Nouveau test' .
