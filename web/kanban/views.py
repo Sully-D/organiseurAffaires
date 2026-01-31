@@ -592,8 +592,13 @@ def toggle_tache(request, tache_id):
         from .models import Tache
         t = Tache.objects.get(id=tache_id)
         t.done = not t.done
+        # Update done_at based on done status
+        if t.done:
+            t.done_at = timezone.now().date()
+        else:
+            t.done_at = None
         t.save()
-        logger.info(f"User {request.user.username} toggled tache {tache_id} ('{t.description}') on scelle '{t.scelle.name if t.scelle else '?'}' (done={t.done}).")
+        logger.info(f"User {request.user.username} toggled tache {tache_id} ('{t.description[:50]}') on scelle '{t.scelle.name if t.scelle else '?'}' (done={t.done}).")
         return JsonResponse({'status': 'success', 'done': t.done})
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=400)

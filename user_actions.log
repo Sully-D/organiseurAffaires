@@ -89,3 +89,21 @@
 2026-01-29 21:28:24 [INFO] User admin added tache 55 ('ENCASE') to scelle 30 ('Nouveau Scellé').
 2026-01-29 21:28:30 [INFO] User admin added tache 56 ('Photos') to scelle 30 ('Nouveau Scellé').
 2026-01-29 21:28:37 [INFO] User admin updated scelle 31 ('Nouveau Scellé 2') in activity 'Nouveau test' .
+2026-01-31 07:50:37 [INFO] User admin created activity 25 ('Nouvelle Activité') in column En cours.
+2026-01-31 07:50:46 [INFO] User admin updated activity 25 ('Rapport tâche').
+2026-01-31 07:50:51 [INFO] User admin added traitement 52 ('IMAGE') to scelle 32 ('Nouveau Scellé').
+2026-01-31 07:50:57 [INFO] User admin added traitement 53 ('Axiom') to scelle 32 ('Nouveau Scellé').
+2026-01-31 07:50:59 [INFO] User admin toggled traitement 52 ('IMAGE') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 07:51:04 [INFO] User admin added tache 57 ('ENCASE') to scelle 32 ('Nouveau Scellé').
+2026-01-31 07:51:06 [INFO] User admin toggled tache 57 ('ENCASE') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 08:18:49 [INFO] User admin toggled tache 33 ('ENCASE') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 08:18:51 [INFO] User admin toggled traitement 35 ('IMAGE') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 08:19:13 [INFO] User admin toggled tache 57 ('ENCASE') on scelle 'Nouveau Scellé' (done=False).
+2026-01-31 08:19:13 [INFO] User admin toggled tache 57 ('ENCASE') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 08:20:54 [INFO] User admin moved activity 9 ('Test date dépassé') to column Terminé.
+2026-01-31 08:20:55 [INFO] User admin moved activity 8 ('Parfait !') to column Terminé.
+2026-01-31 08:20:56 [INFO] User admin moved activity 8 ('Parfait !') to column En cours.
+2026-01-31 08:21:18 [INFO] User admin added traitement 54 ('Axiom') to scelle 14 ('Nouveau Scellé').
+2026-01-31 08:21:22 [INFO] User admin added tache 58 ('ENCASE') to scelle 14 ('Nouveau Scellé').
+2026-01-31 08:21:25 [INFO] User admin toggled traitement 33 ('XRY') on scelle 'Nouveau Scellé' (done=True).
+2026-01-31 08:21:26 [INFO] User admin toggled tache 30 ('Photos') on scelle 'Nouveau Scellé' (done=True).
