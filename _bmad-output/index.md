@@ -82,6 +82,31 @@ python web/manage.py runserver
 - **[👨 💻 Guide de Développement](./development-guide.md)**  
   Installation, configuration, workflows, tests, build, déploiement, debugging, troubleshooting
 
+### Planification BMAD
+
+- **[PRD - Filtrage des cartes par traitements et taches](./planning-artifacts/prd-filtrage-cartes-traitements-taches.md)**  
+  Exigences fonctionnelles et criteres d'acceptation pour le filtrage Kanban par traitements et taches
+
+- **[UX Design - Filtrage des cartes par traitements et taches](./planning-artifacts/ux-design-filtrage-cartes-traitements-taches.md)**  
+  Structure d'interface, interactions, etats visuels, accessibilite et responsive
+
+- **[Architecture - Filtrage des cartes par traitements et taches](./planning-artifacts/architecture-filtrage-cartes-traitements-taches.md)**  
+  Decisions techniques, contrat de donnees DOM, flux de filtrage et strategie de test
+
+- **[Epics and Stories - Filtrage des cartes par traitements et taches](./planning-artifacts/epics-and-stories-filtrage-cartes-traitements-taches.md)**  
+  Decoupage en epics, stories, criteres d'acceptation et matrice de couverture PRD
+
+- **[Implementation Readiness Report - Filtrage des cartes par traitements et taches](./planning-artifacts/readiness-report-filtrage-cartes-traitements-taches.md)**  
+  Verdict GO_WITH_CONCERNS, risques d'implementation et conditions avant sprint planning
+
+### Implementation BMAD
+
+- **[Sprint Status - Filtrage des cartes par traitements et taches](./implementation-artifacts/sprint-status-filtrage-cartes-traitements-taches.yaml)**  
+  Statut de sprint, ordre des stories, dependances, guardrails et matrice d'acceptation
+
+- **[Story 1.1 - Catalogues globaux faits et restants](./implementation-artifacts/story-1.1-catalogues-globaux-faits-restants.md)**  
+  Story prete pour developpement : etendre les catalogues de filtres traitements/taches aux elements faits et restants
+
 ---
 
 ## 📄 Documentation Existante

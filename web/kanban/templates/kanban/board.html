@@ -1,6 +1,50 @@
 {% extends 'kanban/base.html' %}
 
 {% block content %}
+<div id="business-filter-bar" class="business-filter-bar" aria-label="Filtres metier Kanban">
+    <div class="business-filter-group">
+        <label for="business-filter-traitement">Traitement</label>
+        <select id="business-filter-traitement" class="business-filter-select">
+            <option value="">Traitement</option>
+            {% for t in filter_traitements %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+        <label for="business-filter-traitement-done">
+            <input type="checkbox" id="business-filter-traitement-done" disabled>
+            Fait
+        </label>
+        <label for="business-filter-traitement-pending">
+            <input type="checkbox" id="business-filter-traitement-pending" disabled>
+            Restant a faire
+        </label>
+    </div>
+
+    <div class="business-filter-group">
+        <label for="business-filter-tache">Tache</label>
+        <select id="business-filter-tache" class="business-filter-select">
+            <option value="">Tache</option>
+            {% for t in filter_taches %}
+            <option value="{{ t }}">{{ t }}</option>
+            {% endfor %}
+        </select>
+        <label for="business-filter-tache-done">
+            <input type="checkbox" id="business-filter-tache-done" disabled>
+            Fait
+        </label>
+        <label for="business-filter-tache-pending">
+            <input type="checkbox" id="business-filter-tache-pending" disabled>
+            Restant a faire
+        </label>
+    </div>
+
+    <button type="button" id="business-filter-reset">Reinitialiser les filtres</button>
+</div>
+
+<div id="noFilterResults" aria-live="polite" hidden>
+    Aucune carte ne correspond aux filtres
+</div>
+
 <div class="board-container">
     {% for col_data in columns_data %}
     <div class="kanban-column" data-id="{{ col_data.column.id }}">
@@ -98,6 +142,246 @@
         return cookieValue;
     }
 
+    function parseJsonArrayAttribute(card, attributeName) {
+        try {
+            const value = card.getAttribute(attributeName);
+            if (!value) return [];
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            return [];
+        }
+    }
+
+    function parseCardFilterData(card) {
+        if (card._filterData) return card._filterData;
+
+        card._filterData = {
+            traitements: parseJsonArrayAttribute(card, 'data-traitements'),
+            taches: parseJsonArrayAttribute(card, 'data-taches')
+        };
+        return card._filterData;
+    }
+
+    function matchesItemFilter(items, selectedLabel, doneChecked, pendingChecked) {
+        if (!selectedLabel) return true;
+
+        const matchAnyState = (!doneChecked && !pendingChecked) || (doneChecked && pendingChecked);
+        return items.some(item => {
+            if (item.description !== selectedLabel) return false;
+            if (matchAnyState) return true;
+            if (doneChecked) return item.done === true;
+            return item.done === false;
+        });
+    }
+
+    function getGlobalFilterState() {
+        const searchInput = document.getElementById('global-search');
+        const filterSelect = document.getElementById('global-filter');
+        return {
+            query: (searchInput?.value || '').toLowerCase(),
+            filterValue: filterSelect?.value || 'all'
+        };
+    }
+
+    function getBusinessFilterState() {
+        return {
+            traitementLabel: '',
+            traitementDone: false,
+            traitementPending: false,
+            tacheLabel: '',
+            tacheDone: false,
+            tachePending: false,
+            ...(window.businessFilterState || {})
+        };
+    }
+
+    function matchesSearchText(card, query) {
+        if (!query) return true;
+
+        const name = (card.getAttribute('data-name') || '').toLowerCase();
+        const date = (card.getAttribute('data-date') || '').toLowerCase();
+        const renderedText = (card.innerText || card.textContent || '').toLowerCase();
+        return name.includes(query) || date.includes(query) || renderedText.includes(query);
+    }
+
+    function matchesLegacyGlobalFilter(card, filterValue) {
+        const selectedFilter = filterValue || 'all';
+        if (selectedFilter === 'all') return true;
+
+        if (selectedFilter === 'traitements_all') {
+            return parseInt(card.getAttribute('data-pending-traitements') || '0', 10) > 0;
+        }
+        if (selectedFilter === 'taches_all') {
+            return parseInt(card.getAttribute('data-pending-taches') || '0', 10) > 0;
+        }
+        if (selectedFilter.startsWith('traitement:')) {
+            const target = selectedFilter.substring(11);
+            return matchesItemFilter(parseCardFilterData(card).traitements, target, false, false);
+        }
+        if (selectedFilter.startsWith('tache:')) {
+            const target = selectedFilter.substring(6);
+            return matchesItemFilter(parseCardFilterData(card).taches, target, false, false);
+        }
+
+        return true;
+    }
+
+    function matchesBusinessFilters(card, filterState) {
+        const cardData = parseCardFilterData(card);
+        return matchesItemFilter(
+            cardData.traitements,
+            filterState.traitementLabel,
+            filterState.traitementDone,
+            filterState.traitementPending
+        ) && matchesItemFilter(
+            cardData.taches,
+            filterState.tacheLabel,
+            filterState.tacheDone,
+            filterState.tachePending
+        );
+    }
+
+    function isCardVisible(card) {
+        return !card.hidden;
+    }
+
+    function updateVisibleCounts() {
+        let totalVisible = 0;
+        document.querySelectorAll('.kanban-column').forEach(column => {
+            const visibleCount = Array.from(column.querySelectorAll('.activity-card'))
+                .filter(isCardVisible).length;
+            const countEl = column.querySelector('.count');
+            if (countEl) countEl.innerText = visibleCount;
+            totalVisible += visibleCount;
+        });
+        return totalVisible;
+    }
+
+    function updateNoFilterResults(totalVisible) {
+        const noResults = document.getElementById('noFilterResults');
+        if (noResults) noResults.hidden = totalVisible > 0;
+    }
+
+    function applyBoardFilters(filterState = getBusinessFilterState()) {
+        const globalState = getGlobalFilterState();
+
+        document.querySelectorAll('.activity-card').forEach(card => {
+            const visible = matchesSearchText(card, globalState.query)
+                && matchesLegacyGlobalFilter(card, globalState.filterValue)
+                && matchesBusinessFilters(card, filterState);
+            card.hidden = !visible;
+        });
+        const totalVisible = updateVisibleCounts();
+        updateNoFilterResults(totalVisible);
+    }
+
+    function reapplyBoardFiltersAfterMutation() {
+        if (window.applyBoardFilters) {
+            window.applyBoardFilters();
+        } else {
+            applyBoardFilters();
+        }
+    }
+
+    function getBusinessFilterControls() {
+        return {
+            traitementSelect: document.getElementById('business-filter-traitement'),
+            traitementDoneCheckbox: document.getElementById('business-filter-traitement-done'),
+            traitementPendingCheckbox: document.getElementById('business-filter-traitement-pending'),
+            tacheSelect: document.getElementById('business-filter-tache'),
+            tacheDoneCheckbox: document.getElementById('business-filter-tache-done'),
+            tachePendingCheckbox: document.getElementById('business-filter-tache-pending'),
+            resetButton: document.getElementById('business-filter-reset')
+        };
+    }
+
+    function syncBusinessFilterControlState() {
+        const controls = getBusinessFilterControls();
+        if (!controls.traitementSelect || !controls.tacheSelect) return controls;
+
+        const hasTraitement = Boolean(controls.traitementSelect.value);
+        controls.traitementDoneCheckbox.disabled = !hasTraitement;
+        controls.traitementPendingCheckbox.disabled = !hasTraitement;
+        if (!hasTraitement) {
+            controls.traitementDoneCheckbox.checked = false;
+            controls.traitementPendingCheckbox.checked = false;
+        }
+
+        const hasTache = Boolean(controls.tacheSelect.value);
+        controls.tacheDoneCheckbox.disabled = !hasTache;
+        controls.tachePendingCheckbox.disabled = !hasTache;
+        if (!hasTache) {
+            controls.tacheDoneCheckbox.checked = false;
+            controls.tachePendingCheckbox.checked = false;
+        }
+
+        return controls;
+    }
+
+    function updateBusinessFilterStateFromControls() {
+        const controls = syncBusinessFilterControlState();
+        if (!controls.traitementSelect || !controls.tacheSelect) return;
+
+        window.businessFilterState = {
+            traitementLabel: controls.traitementSelect.value,
+            traitementDone: controls.traitementDoneCheckbox.checked,
+            traitementPending: controls.traitementPendingCheckbox.checked,
+            tacheLabel: controls.tacheSelect.value,
+            tacheDone: controls.tacheDoneCheckbox.checked,
+            tachePending: controls.tachePendingCheckbox.checked
+        };
+        window.applyBoardFilters();
+    }
+
+    function resetBusinessFilters() {
+        const controls = getBusinessFilterControls();
+        if (!controls.traitementSelect || !controls.tacheSelect) return;
+
+        controls.traitementSelect.value = '';
+        controls.traitementDoneCheckbox.checked = false;
+        controls.traitementPendingCheckbox.checked = false;
+        controls.tacheSelect.value = '';
+        controls.tacheDoneCheckbox.checked = false;
+        controls.tachePendingCheckbox.checked = false;
+        updateBusinessFilterStateFromControls();
+    }
+
+    function initializeBusinessFilterControls() {
+        const controls = syncBusinessFilterControlState();
+        const filterControls = [
+            controls.traitementSelect,
+            controls.traitementDoneCheckbox,
+            controls.traitementPendingCheckbox,
+            controls.tacheSelect,
+            controls.tacheDoneCheckbox,
+            controls.tachePendingCheckbox
+        ];
+
+        filterControls.forEach(control => {
+            if (control) control.addEventListener('change', updateBusinessFilterStateFromControls);
+        });
+        if (controls.resetButton) {
+            controls.resetButton.addEventListener('click', resetBusinessFilters);
+        }
+        updateBusinessFilterStateFromControls();
+    }
+
+    window.parseCardFilterData = parseCardFilterData;
+    window.matchesItemFilter = matchesItemFilter;
+    window.getGlobalFilterState = getGlobalFilterState;
+    window.matchesSearchText = matchesSearchText;
+    window.matchesLegacyGlobalFilter = matchesLegacyGlobalFilter;
+    window.matchesBusinessFilters = matchesBusinessFilters;
+    window.isCardVisible = isCardVisible;
+    window.updateVisibleCounts = updateVisibleCounts;
+    window.updateNoFilterResults = updateNoFilterResults;
+    window.applyBoardFilters = applyBoardFilters;
+    window.reapplyBoardFiltersAfterMutation = reapplyBoardFiltersAfterMutation;
+    window.syncBusinessFilterControlState = syncBusinessFilterControlState;
+    window.updateBusinessFilterStateFromControls = updateBusinessFilterStateFromControls;
+    window.resetBusinessFilters = resetBusinessFilters;
+
     // Sort Functions
     function toggleSortMenu(btn) {
         // Close other menus
@@ -144,6 +428,7 @@
 
         // Re-append to sort
         cards.forEach(card => columnBody.appendChild(card));
+        reapplyBoardFiltersAfterMutation();
 
         // Close menu
         document.querySelectorAll('.sort-menu.active').forEach(m => m.classList.remove('active'));
@@ -220,6 +505,7 @@
                         const card = checkbox.closest('.activity-card');
                         const targetBody = document.querySelector(`.kanban-column[data-id="${targetColumnId}"] .column-body`);
                         targetBody.appendChild(card);
+                        reapplyBoardFiltersAfterMutation();
 
                         // Update counters (simplistic)
                         // Ideally we should refetch counts or decrement old/increment new
@@ -252,10 +538,7 @@
                     tempDiv.innerHTML = data.card_html;
                     const newCard = tempDiv.firstElementChild;
                     column.appendChild(newCard);
-
-                    // Update count
-                    const countEl = column.parentElement.querySelector('.count');
-                    if (countEl) countEl.innerText = parseInt(countEl.innerText) + 1;
+                    reapplyBoardFiltersAfterMutation();
 
                     // Scroll to new card
                     newCard.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -284,10 +567,9 @@
                     // Remove ALL instances of this card (virtual duplicates)
                     const cards = document.querySelectorAll(`.activity-card[data-id="${activityId}"]`);
                     cards.forEach(card => {
-                        const countEl = card.closest('.kanban-column').querySelector('.count');
-                        if (countEl) countEl.innerText = parseInt(countEl.innerText) - 1;
                         card.remove();
                     });
+                    reapplyBoardFiltersAfterMutation();
                 } else {
                     alert("Erreur lors de la suppression");
                 }
@@ -307,12 +589,10 @@
         const allInstances = document.querySelectorAll(`.activity-card[data-id="${activityId}"]`);
         allInstances.forEach(card => {
             if (card !== keepingCardElement) {
-                // Update count of that column
-                const countEl = card.closest('.kanban-column').querySelector('.count');
-                if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
                 card.remove();
             }
         });
+        reapplyBoardFiltersAfterMutation();
     }
 
     // Refresh Activity Columns (Virtual Presence)
@@ -349,27 +629,22 @@
                                 temp.innerHTML = cardHTML;
                                 const newCard = temp.firstElementChild;
                                 body.appendChild(newCard);
-
-                                // Update count
-                                const countEl = col.querySelector('.count');
-                                if (countEl) countEl.innerText = parseInt(countEl.innerText) + 1;
                             }
                         } else {
                             // Should NOT be in this column
                             if (existingCard) {
                                 existingCard.remove();
-                                // Update count
-                                const countEl = col.querySelector('.count');
-                                if (countEl) countEl.innerText = Math.max(0, parseInt(countEl.innerText) - 1);
                             }
                         }
                     });
+                    reapplyBoardFiltersAfterMutation();
                 }
             });
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const csrftoken = getCookie('csrftoken');
+        initializeBusinessFilterControls();
 
         // Column Sorting
         var board = document.querySelector('.board-container');

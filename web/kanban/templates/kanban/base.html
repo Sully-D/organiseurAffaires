@@ -78,48 +78,15 @@
     </div>
 
     <script>
-        // Global Search Filter
+        // Global search delegates card visibility to the board-level filter engine.
         document.addEventListener('DOMContentLoaded', function () {
             const searchInput = document.getElementById('global-search');
             const filterSelect = document.getElementById('global-filter');
 
             function filterCards() {
-                const query = searchInput.value.toLowerCase();
-                const filterValue = filterSelect.value;
-                const cards = document.querySelectorAll('.activity-card');
-
-                cards.forEach(card => {
-                    const name = (card.getAttribute('data-name') || '').toLowerCase();
-                    const date = (card.getAttribute('data-date') || '').toLowerCase();
-                    const textContent = card.innerText.toLowerCase();
-
-                    const pendingTraitements = parseInt(card.getAttribute('data-pending-traitements') || '0');
-                    const pendingTaches = parseInt(card.getAttribute('data-pending-taches') || '0');
-
-                    const traitementNames = (card.getAttribute('data-pending-traitement-names') || '');
-                    const tacheNames = (card.getAttribute('data-pending-tache-names') || '');
-
-                    let matchesSearch = name.includes(query) || date.includes(query) || textContent.includes(query);
-                    let matchesFilter = true;
-
-                    if (filterValue === 'traitements_all') {
-                        matchesFilter = pendingTraitements > 0;
-                    } else if (filterValue === 'taches_all') {
-                        matchesFilter = pendingTaches > 0;
-                    } else if (filterValue.startsWith('traitement:')) {
-                        const target = filterValue.substring(11); // remove "traitement:"
-                        matchesFilter = traitementNames.includes(target);
-                    } else if (filterValue.startsWith('tache:')) {
-                        const target = filterValue.substring(6); // remove "tache:"
-                        matchesFilter = tacheNames.includes(target);
-                    }
-
-                    if (matchesSearch && matchesFilter) {
-                        card.style.display = ''; // Reset to default (usually flex or block)
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
+                if (window.applyBoardFilters) {
+                    window.applyBoardFilters();
+                }
             }
 
             if (searchInput) {

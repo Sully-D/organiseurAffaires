@@ -107,3 +107,5 @@
 2026-01-31 08:21:22 [INFO] User admin added tache 58 ('ENCASE') to scelle 14 ('Nouveau Scellé').
 2026-01-31 08:21:25 [INFO] User admin toggled traitement 33 ('XRY') on scelle 'Nouveau Scellé' (done=True).
 2026-01-31 08:21:26 [INFO] User admin toggled tache 30 ('Photos') on scelle 'Nouveau Scellé' (done=True).
+2026-04-25 20:53:49 [INFO] User admin toggled tache 33 ('ENCASE') on scelle 'Nouveau Scellé' (done=False).
+2026-04-25 21:00:37 [INFO] User admin updated column order.

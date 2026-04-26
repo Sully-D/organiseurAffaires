@@ -5,7 +5,6 @@ from django.db.models import Q, F, Count, Exists, OuterRef, Subquery, Value, Int
 from django.db.models.functions import Coalesce
 import json
 from datetime import date, timedelta
-import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.db import transaction
@@ -14,6 +13,35 @@ from django.utils import timezone
 from django.contrib.auth.decorators import user_passes_test
 
 logger = logging.getLogger('user_actions')
+
+
+def _build_card_filter_items(items):
+    filter_items = []
+    for item in items.all():
+        description = item.description
+        if description:
+            filter_items.append({
+                "description": description,
+                "done": bool(item.done),
+            })
+    return filter_items
+
+
+def _attach_card_filter_json(activity):
+    traitements = []
+    taches = []
+    for scelle in activity.scelles.all():
+        traitements.extend(_build_card_filter_items(scelle.traitements))
+        taches.extend(_build_card_filter_items(scelle.taches))
+
+    activity.traitements_filter_json = json.dumps(traitements, ensure_ascii=False)
+    activity.taches_filter_json = json.dumps(taches, ensure_ascii=False)
+    return activity
+
+
+def _attach_card_filter_json_to_activities(activities):
+    return [_attach_card_filter_json(activity) for activity in activities]
+
 
 def board(request):
     columns = KanbanColumn.objects.exclude(name='Archivé').order_by('order_index')
@@ -210,14 +238,22 @@ def board(request):
             
         columns_data.append({
             'column': col,
-            'activities': activities
+            'activities': _attach_card_filter_json_to_activities(activities)
         })
         
     context = {
         'columns_data': columns_data,
         'page_title': "Tableau de Bord",
-        'filter_traitements': Traitement.objects.filter(done=False).exclude(description="").values_list('description', flat=True).distinct().order_by('description'),
-        'filter_taches': Tache.objects.filter(done=False).exclude(description="").values_list('description', flat=True).distinct().order_by('description'),
+        'filter_traitements': Traitement.objects.filter(description__isnull=False)
+        .exclude(description__exact="")
+        .values_list('description', flat=True)
+        .distinct()
+        .order_by('description'),
+        'filter_taches': Tache.objects.filter(description__isnull=False)
+        .exclude(description__exact="")
+        .values_list('description', flat=True)
+        .distinct()
+        .order_by('description'),
     }
     return render(request, 'kanban/board.html', context)
 
@@ -448,6 +484,8 @@ def create_activity(request):
         activity.pending_taches = 0
         activity.has_cta = False
         activity.has_reparations = False
+        activity.traitements_filter_json = "[]"
+        activity.taches_filter_json = "[]"
         
         # Render the card HTML
         card_html = render_to_string('kanban/card_snippet.html', {'activity': activity})
@@ -637,7 +675,11 @@ def get_activity_columns(request, activity_id):
             total=Count('id')
         ).values('total')
         
-        activity = Activity.objects.prefetch_related('tags', 'scelles').annotate(
+        activity = Activity.objects.prefetch_related(
+            'tags',
+            'scelles__traitements',
+            'scelles__taches'
+        ).annotate(
             pending_traitements=Coalesce(
                 Subquery(pending_traitements_subquery, output_field=IntegerField()),
                 Value(0)
@@ -716,6 +758,7 @@ def get_activity_columns(request, activity_id):
                     except KanbanColumn.DoesNotExist:
                         pass
 
+        _attach_card_filter_json(activity)
         card_html = render_to_string('kanban/card_snippet.html', {'activity': activity})
         
         return JsonResponse({

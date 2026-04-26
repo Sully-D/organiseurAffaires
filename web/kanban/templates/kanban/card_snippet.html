@@ -1,6 +1,8 @@
 <div class="activity-card {% if not hide_urgency %}{{ activity.urgency_class }}{% endif %}" data-id="{{ activity.id }}"
     data-name="{{ activity.name }}" data-date="{{ activity.date|date:'Y-m-d' }}"
     data-pending-traitements="{{ activity.pending_traitements }}" data-pending-taches="{{ activity.pending_taches }}"
+    data-traitements="{{ activity.traitements_filter_json|escape }}"
+    data-taches="{{ activity.taches_filter_json|escape }}"
     data-pending-traitement-names="{% for s in activity.scelles.all %}{% for t in s.traitements.all %}{% if not t.done %}{{ t.description|escape }}__SEP__{% endif %}{% endfor %}{% endfor %}"
     data-pending-tache-names="{% for s in activity.scelles.all %}{% for t in s.taches.all %}{% if not t.done %}{{ t.description|escape }}__SEP__{% endif %}{% endfor %}{% endfor %}">
     <div class="card-header">

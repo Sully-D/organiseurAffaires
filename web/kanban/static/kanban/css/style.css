@@ -97,6 +97,103 @@ body {
     padding: 1rem;
 }
 
+/* Business Filters */
+.business-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: rgba(30, 41, 59, 0.78);
+    border: var(--glass-border);
+    border-radius: 8px;
+}
+
+.business-filter-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.business-filter-group>label:first-child {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.business-filter-select {
+    min-height: 38px;
+    width: 220px;
+    max-width: 260px;
+    padding: 0 0.75rem;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: var(--glass-border);
+    border-radius: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.business-filter-select:focus,
+#business-filter-reset:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.business-filter-group label:not(:first-child) {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 38px;
+    padding: 0 0.55rem;
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.business-filter-group input[type="checkbox"] {
+    accent-color: var(--accent);
+}
+
+.business-filter-group input[type="checkbox"]:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+#business-filter-reset {
+    min-height: 38px;
+    padding: 0 0.85rem;
+    color: var(--text-primary);
+    background: rgba(56, 189, 248, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+#business-filter-reset:hover {
+    background: rgba(56, 189, 248, 0.22);
+}
+
+#noFilterResults {
+    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    background: rgba(15, 23, 42, 0.72);
+    border: var(--glass-border);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+#noFilterResults[hidden] {
+    display: none;
+}
+
 /* Kanban Board */
 .board-container {
     display: flex;
@@ -616,6 +713,26 @@ body {
 .sort-item:hover {
     background-color: var(--bg-primary);
     color: var(--accent);
+}
+
+@media (max-width: 760px) {
+    .business-filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .business-filter-group {
+        width: 100%;
+    }
+
+    .business-filter-select {
+        width: 100%;
+        max-width: none;
+    }
+
+    #business-filter-reset {
+        width: 100%;
+    }
 }
 
 .sort-item i {

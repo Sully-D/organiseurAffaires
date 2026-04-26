@@ -54,33 +54,33 @@ workflow_status:
   phase_2_planning:
     - id: "prd"
       name: "Product Requirements Document"
-      status: "required"
+      status: "_bmad-output/planning-artifacts/prd-filtrage-cartes-traitements-taches.md"
       agent: "pm"
       command: "/bmad:bmm:workflows:prd"
       note: "Define refactoring vision and quality improvement requirements"
       
     - id: "create-ux-design"
       name: "UX Design"
-      status: "conditional"
+      status: "_bmad-output/planning-artifacts/ux-design-filtrage-cartes-traitements-taches.md"
       agent: "ux-designer"
       command: "/bmad:bmm:workflows:create-ux-design"
-      note: "Will be determined after PRD - likely needed for UI improvements"
+      note: "Completed - UX specification for treatment/task filtering"
 
   # Phase 3: Solutioning
   phase_3_solutioning:
     - id: "create-architecture"
       name: "Architecture"
-      status: "required"
+      status: "_bmad-output/planning-artifacts/architecture-filtrage-cartes-traitements-taches.md"
       agent: "architect"
       command: "/bmad:bmm:workflows:create-architecture"
-      note: "Design refactoring solution and improved architecture"
+      note: "Completed - architecture for treatment/task Kanban filtering"
       
     - id: "create-epics-and-stories"
       name: "Epics & Stories"
-      status: "required"
+      status: "_bmad-output/planning-artifacts/epics-and-stories-filtrage-cartes-traitements-taches.md"
       agent: "pm"
       command: "/bmad:bmm:workflows:create-epics-and-stories"
-      note: "Break down refactoring into implementable stories"
+      note: "Completed - epics and stories for treatment/task Kanban filtering"
       
     - id: "test-design"
       name: "Test Design"
@@ -91,25 +91,25 @@ workflow_status:
       
     - id: "implementation-readiness"
       name: "Implementation Readiness Check"
-      status: "required"
+      status: "_bmad-output/planning-artifacts/readiness-report-filtrage-cartes-traitements-taches.md"
       agent: "architect"
       command: "/bmad:bmm:workflows:check-implementation-readiness"
-      note: "Validate all planning artifacts before implementation"
+      note: "Completed - GO_WITH_CONCERNS; ready for sprint planning"
 
   # Phase 4: Implementation
   phase_4_implementation:
     - id: "sprint-planning"
       name: "Sprint Planning"
-      status: "required"
+      status: "_bmad-output/implementation-artifacts/sprint-status-filtrage-cartes-traitements-taches.yaml"
       agent: "sm"
       command: "/bmad:bmm:workflows:sprint-planning"
-      note: "Create sprint-status.yaml - subsequent work tracked there"
+      note: "Completed - sprint status created; ready for story creation"
 
 # Current progress
-current_phase: 1
-current_workflow: "research"
-next_agent: "analyst"
-next_command: "/bmad:bmm:workflows:research"
+current_phase: 4
+current_workflow: "code-review"
+next_agent: "dev"
+next_command: "/bmad:bmm:workflows:dev-story"
 
 # Notes
 notes: |
@@ -117,4 +117,41 @@ notes: |
   User working solo on desktop (PySide6) + web (Django) application.
   Documentation already complete in _bmad-output/.
   User selected both research and brainstorm discovery workflows.
-  Next: Start with Research workflow to gather best practices.
+  Architecture for treatment/task Kanban filtering completed on 2026-04-25.
+  Epics and stories for treatment/task Kanban filtering completed on 2026-04-25.
+  Implementation readiness completed on 2026-04-25 with GO_WITH_CONCERNS.
+  Sprint planning completed on 2026-04-25.
+  Story 1.1 created on 2026-04-25.
+  Story 1.1 implemented on 2026-04-25 and ready for code review.
+  Story 1.1 code review approved on 2026-04-25.
+  Story 1.2 created on 2026-04-25.
+  Story 1.2 implemented on 2026-04-25 and ready for code review.
+  Story 1.2 code review approved on 2026-04-25.
+  Story 2.1 created on 2026-04-25.
+  Story 2.1 implemented on 2026-04-25 and ready for code review.
+  Story 2.1 code review approved on 2026-04-25.
+  Story 2.2 created on 2026-04-25.
+  Story 2.2 implemented on 2026-04-25 and ready for code review.
+  Story 2.2 code review approved on 2026-04-25.
+  Story 3.1 created on 2026-04-25.
+  Story 3.1 implemented on 2026-04-25 and ready for code review.
+  Story 3.1 code review approved on 2026-04-25.
+  Story 3.2 created on 2026-04-25.
+  Story 3.2 implemented on 2026-04-25 and ready for code review.
+  Story 3.2 code review approved on 2026-04-25.
+  Story 3.3 created on 2026-04-25.
+  Story 3.3 implemented on 2026-04-25 and ready for code review.
+  Story 3.3 code review approved on 2026-04-25.
+  Story 4.1 created on 2026-04-25.
+  Story 4.1 implemented on 2026-04-25 and ready for code review.
+  Story 4.1 code review approved on 2026-04-25.
+  Story 4.2 created on 2026-04-26.
+  Story 4.2 implemented on 2026-04-26 and ready for code review.
+  Story 4.2 code review approved on 2026-04-26.
+  Story 5.1 created on 2026-04-26.
+  Story 5.1 implemented on 2026-04-26 and ready for code review.
+  Story 5.1 code review approved on 2026-04-26.
+  Story 5.2 created on 2026-04-26.
+  Story 5.2 verification completed on 2026-04-26.
+  Story 5.2 code review requested changes on 2026-04-26.
+  Next: address Story 5.2 review finding, then re-run code review.
