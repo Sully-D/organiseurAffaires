@@ -370,8 +370,19 @@ class BoardBusinessFilterScriptTests(SimpleTestCase):
         self.assertIn("accent-color: var(--accent);", css)
         self.assertIn("opacity: 0.45;", css)
 
+        main_block = re.search(r"\.main-content\s*\{(?P<body>[^}]*)\}", css, re.S).group("body")
+        self.assertIn("display: flex;", main_block)
+        self.assertIn("flex-direction: column;", main_block)
+        self.assertIn("min-height: 0;", main_block)
+
         board_block = re.search(r"\.board-container\s*\{(?P<body>[^}]*)\}", css, re.S).group("body")
+        self.assertIn("flex: 1 1 auto;", board_block)
+        self.assertIn("min-height: 0;", board_block)
         self.assertIn("overflow-x: auto;", board_block)
+        self.assertIn("overflow-y: hidden;", board_block)
+
+        column_block = re.search(r"\.kanban-column\s*\{(?P<body>[^}]*)\}", css, re.S).group("body")
+        self.assertIn("flex: 0 0 300px;", column_block)
 
     def test_business_filter_css_has_responsive_layout_without_hiding_columns(self):
         css = self.get_style_css()

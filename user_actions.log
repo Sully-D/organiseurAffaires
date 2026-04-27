@@ -109,3 +109,9 @@
 2026-01-31 08:21:26 [INFO] User admin toggled tache 30 ('Photos') on scelle 'Nouveau Scellé' (done=True).
 2026-04-25 20:53:49 [INFO] User admin toggled tache 33 ('ENCASE') on scelle 'Nouveau Scellé' (done=False).
 2026-04-25 21:00:37 [INFO] User admin updated column order.
+2026-04-27 20:21:11 [INFO] User admin added tache 59 ('Tri excels') to scelle 14 ('Nouveau Scellé').
+2026-04-27 20:21:16 [INFO] User admin toggled tache 59 ('Tri excels') on scelle 'Nouveau Scellé' (done=True).
+2026-04-27 20:21:23 [INFO] User admin updated scelle 33 ('2') in activity 'Parfait !' .
+2026-04-27 20:21:24 [INFO] User admin updated scelle 33 ('2') in activity 'Parfait !' .
+2026-04-27 20:21:36 [INFO] User admin added tache 60 ('Tri excels') to scelle 33 ('2').
+2026-04-27 20:21:41 [INFO] User admin added traitement 55 ('XRY') to scelle 33 ('2').
